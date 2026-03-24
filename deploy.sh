@@ -98,6 +98,10 @@ do_pull() {
 do_lamp_install() {
   ensure_env
   require_node
+  # Unzip/rsync over an old tree does not delete files removed in git; Next still
+  # compiles them and fails (e.g. stripe.ts after dropping the stripe package).
+  rm -rf src/app/api/stripe src/app/dashboard/billing src/app/owners/pricing
+  rm -f src/lib/stripe.ts src/lib/subscription.ts
   echo "Installing dependencies..."
   npm ci
   echo "Running database migrations..."

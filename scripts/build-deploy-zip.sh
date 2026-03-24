@@ -54,5 +54,6 @@ chmod +x "${STAGE}/scripts/build-deploy-zip.sh" 2>/dev/null || true
 )
 
 echo "Wrote $OUT_ABS"
-echo "On the server (Node 20.9+ + MySQL): unzip -o $(basename "$OUT_ABS") && cd luxpads && ./deploy.sh && ./deploy.sh start"
+echo "On the server (Node 20.9+ + MySQL): prefer a clean dir (rm -rf luxpads) before unzip so"
+echo "  deleted files from older releases are gone; then: unzip $(basename "$OUT_ABS") && cd luxpads && ./deploy.sh && ./deploy.sh start"
 echo "Production: use deploy/luxpads.service.example + Apache example in deploy/"
