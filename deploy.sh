@@ -76,6 +76,25 @@ ensure_env() {
   fi
 }
 
+
+do_pull() {
+  echo "==> Pulling latest code from origin/main..."
+  if ! command -v git >/dev/null 2>&1; then
+    echo "error: git is not installed or not on PATH" >&2
+    exit 1
+  fi
+  git fetch origin
+  git reset --hard origin/main
+  echo ""
+  echo "==> Running full rebuild..."
+  do_lamp_install
+  echo ""
+  echo "==> Restarting luxpads service..."
+  systemctl restart luxpads
+  sleep 3
+  systemctl status luxpads --no-pager -l | tail -8
+}
+
 do_lamp_install() {
   ensure_env
   require_node
@@ -151,6 +170,9 @@ case "$cmd" in
     ;;
   lamp|node|install)
     do_lamp_install
+    ;;
+  pull|update)
+    do_pull
     ;;
   start)
     do_start
