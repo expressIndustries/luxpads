@@ -14,12 +14,14 @@ on a LAMP box, Apache usually reverse-proxies to Node (see deploy/apache-luxpads
 
 Commands:
   lamp | install     npm ci, prisma migrate deploy, next build (default if no args)
+  pull | update      git reset to origin/main, full lamp rebuild, systemctl restart luxpads
   start              production next start (binds 127.0.0.1:3000; use systemd in production)
   seed               npm run db:seed (optional demo data; needs devDependencies / tsx)
   docker up|down|…   Docker Compose workflow (local or Docker-capable servers)
 
 Examples:
   ./deploy.sh                  # same as ./deploy.sh lamp
+  ./deploy.sh pull             # production server: sync git + rebuild + restart service
   ./deploy.sh start            # after lamp, or under systemd
   ./deploy.sh docker up        # build & run via docker compose
 EOF
