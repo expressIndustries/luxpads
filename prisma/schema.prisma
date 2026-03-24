@@ -1,4 +1,4 @@
-// LuxStay Direct — PostgreSQL schema (Prisma 5)
+// LuxStay Direct — MySQL schema (Prisma 5)
 // Domain: listing marketplace; owner membership via Stripe; no renter payments.
 
 generator client {
@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 

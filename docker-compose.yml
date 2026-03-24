@@ -1,27 +1,29 @@
-# LuxStay Direct — local stack (PostgreSQL + optional app)
-# The app is Next.js (Node), not PHP. Use this compose file for the database.
+# LuxStay Direct — local stack (MySQL 8 + optional app)
 # Run: docker compose up -d db
 # Then: cp .env.example .env && npm run db:migrate && npm run db:seed && npm run dev
 
 services:
   db:
-    image: postgres:16-alpine
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      POSTGRES_USER: luxstay
-      POSTGRES_PASSWORD: luxstay
-      POSTGRES_DB: luxstay
+      MYSQL_ROOT_PASSWORD: luxstay_root
+      MYSQL_DATABASE: luxstay
+      MYSQL_USER: luxstay
+      MYSQL_PASSWORD: luxstay
     ports:
-      - "5432:5432"
+      # If bind fails (e.g. local MySQL already on 3306), use "3307:3306" and update DATABASE_URL port.
+      - "3306:3306"
     volumes:
-      - luxstay_pg:/var/lib/postgresql/data
+      - luxstay_mysql:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U luxstay -d luxstay"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pluxstay_root"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 15
+      start_period: 20s
 
-  # Optional: run the Next.js app in Docker (Node 22 matches Next 16 engines)
   app:
     profiles: ["full"]
     build:
@@ -30,7 +32,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://luxstay:luxstay@db:5432/luxstay?schema=public
+      DATABASE_URL: mysql://luxstay:luxstay@db:3306/luxstay
       AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production}
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NODE_ENV: production
@@ -39,4 +41,4 @@ services:
         condition: service_healthy
 
 volumes:
-  luxstay_pg:
+  luxstay_mysql:

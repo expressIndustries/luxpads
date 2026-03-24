@@ -1,7 +1,7 @@
 import type { AvailabilityBlock } from "@prisma/client";
 import { addDays, startOfDay } from "date-fns";
 
-/** Inclusive date-only range overlap (PostgreSQL @db.Date stored as UTC midnight). */
+/** Inclusive date-only range overlap (DATE columns stored as UTC midnight). */
 export function rangesOverlap(
   aStart: Date,
   aEnd: Date,

@@ -2,12 +2,12 @@
 
 Production-style MVP for a **luxury vacation home listing marketplace**. Homeowners pay a **monthly Stripe subscription** to publish; travelers **browse and inquire for free** and **finalize bookings directly with owners** (no platform booking checkout, no traveler fees).
 
-> **Stack note:** Your brief mentioned a PHP/LAMP + MySQL setup, but the detailed product spec calls for **Next.js + PostgreSQL + Prisma**. This repo implements that stack. MySQL/LAMP is not used. **Docker Compose** in this folder runs **PostgreSQL** for local/prod-like dev; the optional `app` service uses **Node 22** (Next.js 16 requires **Node ≥ 20.9**).
+> **Stack note:** The app is **Next.js + Prisma** on **MySQL 8** (fits a typical LAMP-style database choice while keeping the TypeScript app layer). **Docker Compose** runs **MySQL 8.4** locally; the optional `app` service uses **Node 22** (Next.js 16 requires **Node ≥ 20.9**). PHP/Apache are not required for this codebase.
 
 ## Requirements
 
 - **Node.js ≥ 20.9** (Next.js 16)
-- **Docker** (for Postgres) *or* any managed PostgreSQL instance
+- **Docker** (for MySQL) *or* any managed MySQL 8 / MariaDB 10.5+ compatible with Prisma’s `mysql` provider
 - **npm** (or pnpm/yarn if you adapt commands)
 
 ## Quick start (local)
@@ -25,6 +25,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+**Switching from the old Postgres compose setup:** stop containers, remove the old Postgres volume if present (`luxstay_pg`), and point `DATABASE_URL` at MySQL (see `.env.example`). Compose uses host **3306** by default; if that port is already taken locally, change the port mapping in `docker-compose.yml` (e.g. `3307:3306`) and match the port in `DATABASE_URL`. Volume: `luxstay_mysql`.
+
 ### Seed logins
 
 | Role   | Email                    | Password          |
@@ -37,7 +39,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 See [`.env.example`](./.env.example). Key entries:
 
-- `DATABASE_URL` — PostgreSQL connection string
+- `DATABASE_URL` — MySQL connection string, e.g. `mysql://USER:PASSWORD@HOST:3306/DATABASE`
 - `AUTH_SECRET` — Auth.js secret
 - `STRIPE_*` — Owner subscription checkout + webhooks (placeholders OK for UI-only dev)
 - `REQUIRE_LISTING_APPROVAL` — `true` sends owner “Publish” to `pending_review` for admin approval
