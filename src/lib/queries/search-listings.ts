@@ -23,22 +23,14 @@ export async function searchListings(params: SearchListingParams) {
   if (params.city?.trim()) {
     const t = params.city.trim();
     and.push({
-      OR: [
-        { city: { contains: t, mode: "insensitive" } },
-        { state: { contains: t, mode: "insensitive" } },
-        { title: { contains: t, mode: "insensitive" } },
-      ],
+      OR: [{ city: { contains: t } }, { state: { contains: t } }, { title: { contains: t } }],
     });
   }
 
   if (params.q?.trim()) {
     const t = params.q.trim();
     and.push({
-      OR: [
-        { title: { contains: t, mode: "insensitive" } },
-        { city: { contains: t, mode: "insensitive" } },
-        { summary: { contains: t, mode: "insensitive" } },
-      ],
+      OR: [{ title: { contains: t } }, { city: { contains: t } }, { summary: { contains: t } }],
     });
   }
 
