@@ -1,0 +1,247 @@
+// LuxStay Direct — PostgreSQL schema (Prisma 5)
+// Domain: listing marketplace; owner membership via Stripe; no renter payments.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  renter
+  owner
+  admin
+}
+
+enum ListingStatus {
+  draft
+  pending_review
+  published
+  suspended
+  archived
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+  incomplete
+}
+
+enum AvailabilityBlockType {
+  blocked
+  booked
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String
+  name          String?
+  phone         String?
+  role          Role      @default(renter)
+  suspended     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ownerProfile   OwnerProfile?
+  listings       Listing[]       @relation("OwnerListings")
+  inquiriesSent  Inquiry[]       @relation("RenterInquiries")
+  subscription   Subscription?
+  favorites      Favorite[]
+  adminActions   AdminAction[]   @relation("AdminActions")
+}
+
+model OwnerProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName  String
+  bio          String?  @db.Text
+  contactEmail String?
+  contactPhone String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Plan {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?  @db.Text
+  stripePriceId   String   @unique
+  stripeProductId String?
+  amountCents     Int
+  interval        String   @default("month")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 Plan               @relation(fields: [planId], references: [id])
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  status               SubscriptionStatus @default(incomplete)
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([stripeSubscriptionId])
+  @@index([status])
+}
+
+model Listing {
+  id                   String        @id @default(cuid())
+  ownerId              String
+  owner                User          @relation("OwnerListings", fields: [ownerId], references: [id], onDelete: Cascade)
+  slug                 String        @unique
+  title                String
+  summary              String        @db.Text
+  description          String        @db.Text
+  propertyType         String
+
+  addressLine1 String
+  city         String
+  state        String
+  country      String  @default("United States")
+  postalCode   String
+  latitude     Float?
+  longitude    Float?
+
+  maxGuests  Int
+  bedrooms   Int
+  bathrooms  Float
+  beds       Int
+
+  sleepingArrangements String? @db.Text
+  houseRules           String? @db.Text
+  checkInOut           String? @db.Text
+  cancellationPolicy   String? @db.Text
+
+  nightlyRateCents Int
+  cleaningFeeNote  String? @db.Text
+  minNights        Int     @default(1)
+
+  status   ListingStatus @default(draft)
+  featured Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images       ListingImage[]
+  amenities    ListingAmenity[]
+  availability AvailabilityBlock[]
+  inquiries    Inquiry[]
+  favorites    Favorite[]
+
+  @@index([status, city])
+  @@index([ownerId])
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0)
+  alt       String?
+  createdAt DateTime @default(now())
+
+  @@index([listingId, sortOrder])
+}
+
+model Amenity {
+  id       String           @id @default(cuid())
+  slug     String           @unique
+  label    String
+  category String?
+  listings ListingAmenity[]
+}
+
+model ListingAmenity {
+  listingId String
+  amenityId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, amenityId])
+}
+
+model AvailabilityBlock {
+  id        String                  @id @default(cuid())
+  listingId String
+  listing   Listing                 @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startDate DateTime                @db.Date
+  endDate   DateTime                @db.Date
+  type      AvailabilityBlockType   @default(blocked)
+  note      String?
+  createdAt DateTime                @default(now())
+
+  @@index([listingId, startDate, endDate])
+}
+
+model Inquiry {
+  id           String   @id @default(cuid())
+  listingId    String
+  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  renterName   String
+  renterEmail  String
+  renterPhone  String?
+  checkIn      DateTime? @db.Date
+  checkOut     DateTime? @db.Date
+  guestCount   Int?
+  message      String   @db.Text
+  read         Boolean  @default(false)
+  renterUserId String?
+  renterUser   User?    @relation("RenterInquiries", fields: [renterUserId], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([listingId])
+}
+
+model AdminAction {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("AdminActions", fields: [adminId], references: [id])
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+model FeaturedDestination {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  subtitle  String?
+  imageUrl  String?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+}

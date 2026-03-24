@@ -1,0 +1,42 @@
+# LuxStay Direct — local stack (PostgreSQL + optional app)
+# The app is Next.js (Node), not PHP. Use this compose file for the database.
+# Run: docker compose up -d db
+# Then: cp .env.example .env && npm run db:migrate && npm run db:seed && npm run dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: luxstay
+      POSTGRES_PASSWORD: luxstay
+      POSTGRES_DB: luxstay
+    ports:
+      - "5432:5432"
+    volumes:
+      - luxstay_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luxstay -d luxstay"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Optional: run the Next.js app in Docker (Node 22 matches Next 16 engines)
+  app:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://luxstay:luxstay@db:5432/luxstay?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production}
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  luxstay_pg:
