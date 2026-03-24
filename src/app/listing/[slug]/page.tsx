@@ -6,7 +6,6 @@ import { formatMoney } from "@/lib/utils";
 import { MapPlaceholder } from "@/components/listing/map-placeholder";
 import { AvailabilityPreview } from "@/components/listing/availability-preview";
 import { InquiryForm } from "@/components/listing/inquiry-form";
-import { MarketplaceDisclaimer } from "@/components/marketplace-disclaimer";
 import { siteCopy } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";

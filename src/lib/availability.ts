@@ -41,7 +41,7 @@ function isAfterDay(a: Date, b: Date) {
   return startOfDay(a).getTime() > startOfDay(b).getTime();
 }
 
-export function mergeSuggestionsForICal(_listingId: string) {
+export function mergeSuggestionsForICal() {
   // Hook for future iCal import — keep API stable
   return { supported: false as const };
 }
