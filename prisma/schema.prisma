@@ -1,5 +1,5 @@
-// LuxStay Direct — MySQL schema (Prisma 5)
-// Domain: listing marketplace; owner membership via Stripe; no renter payments.
+// LuxPads — MySQL schema (Prisma 5)
+// Domain: listing marketplace; owner listings are free (no platform subscription).
 
 generator client {
   provider = "prisma-client-js"
@@ -24,15 +24,6 @@ enum ListingStatus {
   archived
 }
 
-enum SubscriptionStatus {
-  trialing
-  active
-  past_due
-  canceled
-  unpaid
-  incomplete
-}
-
 enum AvailabilityBlockType {
   blocked
   booked
@@ -53,7 +44,6 @@ model User {
   ownerProfile   OwnerProfile?
   listings       Listing[]       @relation("OwnerListings")
   inquiriesSent  Inquiry[]       @relation("RenterInquiries")
-  subscription   Subscription?
   favorites      Favorite[]
   adminActions   AdminAction[]   @relation("AdminActions")
 }
@@ -68,39 +58,6 @@ model OwnerProfile {
   contactPhone String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-}
-
-model Plan {
-  id              String   @id @default(cuid())
-  name            String
-  description     String?  @db.Text
-  stripePriceId   String   @unique
-  stripeProductId String?
-  amountCents     Int
-  interval        String   @default("month")
-  active          Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  subscriptions Subscription[]
-}
-
-model Subscription {
-  id                   String             @id @default(cuid())
-  userId               String             @unique
-  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId               String
-  plan                 Plan               @relation(fields: [planId], references: [id])
-  stripeCustomerId     String?            @unique
-  stripeSubscriptionId String?            @unique
-  status               SubscriptionStatus @default(incomplete)
-  currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean            @default(false)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-
-  @@index([stripeSubscriptionId])
-  @@index([status])
 }
 
 model Listing {

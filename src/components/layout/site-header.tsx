@@ -19,7 +19,7 @@ export async function SiteHeader() {
         <Link href="/" className="flex flex-col leading-tight">
           <span className="font-serif text-lg tracking-tight text-stone-900">{siteCopy.legalName}</span>
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-stone-500">
-            A FestivalPads marketplace
+            {siteCopy.tagline}
           </span>
         </Link>
         <nav className="hidden items-center gap-8 md:flex">

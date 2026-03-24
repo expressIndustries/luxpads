@@ -5,6 +5,8 @@ import { ListingEditForm } from "@/components/dashboard/listing-edit-form";
 
 type Props = { params: Promise<{ id: string }> };
 
+export const dynamic = "force-dynamic";
+
 export default async function EditListingPage({ params }: Props) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

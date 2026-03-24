@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { AvailabilityBlockType } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export default async function CalendarPage({
   searchParams,
 }: {

@@ -1,0 +1,26 @@
+# systemd unit example — copy to /etc/systemd/system/luxpads.service, adjust paths and User=.
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now luxpads
+#
+# Requires Node 20.9+ on PATH for the service user (avoid nvm unless you source nvm in a wrapper script).
+
+[Unit]
+Description=LuxPads Next.js
+After=network.target
+# If MySQL is on the same host:
+# After=network.target mysql.service
+
+[Service]
+Type=simple
+User=luxpads
+Group=luxpads
+WorkingDirectory=/var/www/luxpads
+Environment=NODE_ENV=production
+# Loads DATABASE_URL, AUTH_SECRET, NEXT_PUBLIC_*, etc.
+EnvironmentFile=/var/www/luxpads/.env
+ExecStart=/usr/bin/npm run start:prod
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

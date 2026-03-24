@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <h1 className="font-serif text-4xl text-stone-900">Privacy policy (placeholder)</h1>
       <p className="mt-4 text-sm leading-relaxed text-stone-600">
         This is placeholder privacy copy. Your production policy should describe what data {siteCopy.legalName} collects
-        (accounts, inquiries, analytics), how it is processed, retention, subprocessors (e.g., Stripe, email providers),
+        (accounts, inquiries, analytics), how it is processed, retention, subprocessors (e.g., email providers),
         and user rights.
       </p>
     </div>

@@ -1,0 +1,48 @@
+# WHM / cPanel — proxy domain root to LuxPads (Node on 127.0.0.1:3000)
+#
+# Use this on multi-account servers where each domain has its own vhost. You cannot put
+# ProxyPass in .htaccess; cPanel merges these snippets into the domain’s vhost.
+#
+# 1) Replace CPUSER with the cPanel username and EXAMPLE.COM with the domain (no www).
+# 2) Replace 3000 if your Node app listens on another port (one port per app).
+# 3) Create BOTH files — HTTP and HTTPS — then rebuild Apache.
+#
+# Paths (typical AlmaLinux/RHEL cPanel; if missing, check /etc/apache2/conf.d/userdata/):
+#   /etc/apache2/conf.d/userdata/std/2_4/CPUSER/EXAMPLE.COM/luxpads-proxy.conf
+#   /etc/apache2/conf.d/userdata/ssl/2_4/CPUSER/EXAMPLE.COM/luxpads-proxy.conf
+#
+# 4) Rebuild & restart (root / WHM terminal):
+#   /usr/local/cpanel/scripts/rebuildhttpdconf && /usr/local/cpanel/scripts/restartsrv_httpd
+#
+# Modules: proxy, proxy_http, headers (EasyApache usually has these). If proxy fails, enable via WHM.
+#
+# AutoSSL / Let’s Encrypt: exclude /.well-known so challenges still hit public_html (see below).
+
+# ----- Paste into: userdata/std/2_4/CPUSER/EXAMPLE.COM/luxpads-proxy.conf (port 80) -----
+
+ProxyPreserveHost On
+RequestHeader set X-Forwarded-Proto "http"
+
+# Let AutoSSL / acme-challenge use the account’s document root (not Node)
+ProxyPass /.well-known !
+
+ProxyPass / http://127.0.0.1:3000/
+ProxyPassReverse / http://127.0.0.1:3000/
+
+# ----- Paste into: userdata/ssl/2_4/CPUSER/EXAMPLE.COM/luxpads-proxy.conf (SSL vhost) -----
+
+ProxyPreserveHost On
+RequestHeader set X-Forwarded-Proto "https"
+
+ProxyPass /.well-known !
+
+ProxyPass / http://127.0.0.1:3000/
+ProxyPassReverse / http://127.0.0.1:3000/
+
+# ----- Notes -----
+# • Domain root: everything except /.well-known goes to Next.js — correct for LuxPads at /.
+# • Set NEXT_PUBLIC_APP_URL in .env to https://EXAMPLE.COM (or https://www — match canonical URL).
+# • Pick one host (apex or www) in cPanel “Redirects” and keep cookies/auth consistent.
+# • Ensure the Node process runs as the account user (or a user that can read the app + write public/uploads).
+# • cPanel “Node.js” / Application Manager: optional alternative to manual proxy + systemd; if you use it,
+#   follow cPanel’s UI port/socket and point ProxyPass at that instead of 3000.

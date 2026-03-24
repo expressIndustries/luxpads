@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { getFeaturedListings } from "@/lib/queries/search-listings";
 import { ListingCard } from "@/components/listing/listing-card";
 import { siteCopy } from "@/lib/constants";
+
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [featured, destinations] = await Promise.all([
     getFeaturedListings(6),
@@ -22,18 +25,19 @@ export default async function HomePage() {
           alt=""
           fill
           priority
+          unoptimized
           className="object-cover"
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-900/35 to-stone-900/20" />
         <div className="relative mx-auto flex min-h-[78vh] max-w-6xl flex-col justify-end px-4 pb-16 pt-32 sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-stone-200/90">FestivalPads presents</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-stone-200/90">{siteCopy.domainDisplay}</p>
           <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
             {siteCopy.legalName}
           </h1>
           <p className="mt-4 max-w-xl text-lg text-stone-200/95">{siteCopy.tagline}</p>
           <p className="mt-2 max-w-xl text-sm text-stone-300/90">
-            Book direct with homeowners. No traveler booking fees. Owners pay a low monthly membership to list.
+            No traveler booking fees. Owners list for free; you arrange stays directly with the homeowner.
           </p>
           <form
             action="/search"
@@ -81,7 +85,7 @@ export default async function HomePage() {
           <div>
             <h2 className="font-serif text-3xl text-stone-900">Featured residences</h2>
             <p className="mt-2 max-w-xl text-sm text-stone-600">
-              Hand-picked homes for festival seasons and executive escapes—always contact the owner directly.
+              Hand-picked luxury homes—always contact the owner directly.
             </p>
           </div>
           <Link
@@ -116,7 +120,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif text-3xl text-stone-900">Signature destinations</h2>
           <p className="mt-2 max-w-2xl text-sm text-stone-600">
-            From Sundance-adjacent peaks to Pacific sunsets—start your search in a curated corridor.
+            From Rocky Mountain peaks to Pacific sunsets—start your search in a curated corridor.
           </p>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {destinations.map((d) => (
@@ -127,7 +131,13 @@ export default async function HomePage() {
               >
                 <div className="relative aspect-[4/3]">
                   {d.imageUrl ? (
-                    <Image src={d.imageUrl} alt="" fill className="object-cover transition group-hover:scale-[1.02]" />
+                    <Image
+                      src={d.imageUrl}
+                      alt=""
+                      fill
+                      unoptimized
+                      className="object-cover transition group-hover:scale-[1.02]"
+                    />
                   ) : (
                     <div className="h-full w-full bg-stone-200" />
                   )}
@@ -147,8 +157,8 @@ export default async function HomePage() {
           <div>
             <h2 className="font-serif text-3xl text-stone-900">List your home with confidence</h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-600">
-              Owners pay a simple monthly membership—never a commission on your bookings. You screen guests, set contracts,
-              and collect payment off-platform while we showcase your property beautifully.
+              Listing is free—no platform commission on your bookings. You screen guests, set contracts, and collect
+              payment off-platform while we showcase your property beautifully.
             </p>
             <ul className="mt-6 space-y-2 text-sm text-stone-700">
               <li>— Premium listing pages with availability tools</li>
@@ -163,10 +173,10 @@ export default async function HomePage() {
                 Owner overview
               </Link>
               <Link
-                href="/owners/pricing"
+                href="/signup"
                 className="inline-flex items-center justify-center rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-medium text-stone-900 shadow-sm hover:border-stone-300 hover:bg-stone-50"
               >
-                Membership pricing
+                Create owner account
               </Link>
             </div>
           </div>
@@ -175,6 +185,7 @@ export default async function HomePage() {
               src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200&q=80"
               alt=""
               fill
+              unoptimized
               className="object-cover"
             />
           </div>

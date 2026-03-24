@@ -91,13 +91,30 @@ export async function searchListings(params: SearchListingParams) {
   });
 }
 
+const heroImageInclude = {
+  images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+};
+
+/**
+ * Homes for the homepage “Featured residences” band: prefer `featured`, then fill with newest public listings
+ * so the section is never empty if `featured` flags did not import correctly.
+ */
 export async function getFeaturedListings(limit = 6) {
-  return prisma.listing.findMany({
+  const featured = await prisma.listing.findMany({
     where: publicListingWhere({ featured: true }),
     take: limit,
     orderBy: { updatedAt: "desc" },
-    include: {
-      images: { orderBy: { sortOrder: "asc" }, take: 1 },
-    },
+    include: heroImageInclude,
   });
+  if (featured.length >= limit) return featured;
+
+  const rest = await prisma.listing.findMany({
+    where: publicListingWhere(
+      featured.length > 0 ? { id: { notIn: featured.map((l) => l.id) } } : {},
+    ),
+    take: limit - featured.length,
+    orderBy: { updatedAt: "desc" },
+    include: heroImageInclude,
+  });
+  return [...featured, ...rest];
 }

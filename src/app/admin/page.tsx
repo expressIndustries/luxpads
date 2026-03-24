@@ -1,21 +1,21 @@
 import { prisma } from "@/lib/prisma";
-import { ListingStatus, SubscriptionStatus, Role } from "@prisma/client";
+import { ListingStatus, Role } from "@prisma/client";
 import { adminSetListingFeatured, adminSetListingStatus, adminSetUserSuspended } from "@/lib/actions/admin-actions";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
-  const [ownerCount, listingPublished, activeSubs, inquiryCount, listings, users] = await Promise.all([
+  const [ownerCount, listingPublished, pendingReview, inquiryCount, listings, users] = await Promise.all([
     prisma.user.count({ where: { role: Role.owner } }),
     prisma.listing.count({ where: { status: ListingStatus.published } }),
-    prisma.subscription.count({
-      where: { status: { in: [SubscriptionStatus.active, SubscriptionStatus.trialing] } },
-    }),
+    prisma.listing.count({ where: { status: ListingStatus.pending_review } }),
     prisma.inquiry.count(),
     prisma.listing.findMany({
       orderBy: { updatedAt: "desc" },
       take: 40,
-      include: { owner: { include: { ownerProfile: true, subscription: true } } },
+      include: { owner: { include: { ownerProfile: true } } },
     }),
     prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
   ]);
@@ -25,7 +25,7 @@ export default async function AdminPage() {
       <section className="grid gap-4 sm:grid-cols-4">
         <Metric label="Owners" value={ownerCount} />
         <Metric label="Published listings" value={listingPublished} />
-        <Metric label="Active subscriptions" value={activeSubs} />
+        <Metric label="Pending review" value={pendingReview} />
         <Metric label="Inquiries" value={inquiryCount} />
       </section>
 

@@ -9,11 +9,11 @@ export function SiteFooter() {
           <div>
             <p className="font-serif text-xl text-stone-900">{siteCopy.legalName}</p>
             <p className="mt-2 text-sm text-stone-600">
-              Presented by{" "}
-              <a href="https://festivalpads.com" className="underline decoration-stone-300 underline-offset-4">
-                FestivalPads.com
+              <a href={siteCopy.domainUrl} className="underline decoration-stone-300 underline-offset-4">
+                {siteCopy.domainDisplay}
               </a>
-              . {siteCopy.tagline}
+              <span className="text-stone-400"> · </span>
+              {siteCopy.tagline}
             </p>
           </div>
           <div className="space-y-2 text-sm text-stone-600">
@@ -21,8 +21,8 @@ export function SiteFooter() {
             <Link href="/search" className="block hover:text-stone-900">
               Browse homes
             </Link>
-            <Link href="/owners/pricing" className="block hover:text-stone-900">
-              Owner membership
+            <Link href="/owners" className="block hover:text-stone-900">
+              For owners
             </Link>
           </div>
           <div className="space-y-2 text-sm text-stone-600">

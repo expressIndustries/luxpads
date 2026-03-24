@@ -56,7 +56,7 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
       <div className="grid gap-3 sm:grid-cols-3">
         {images.map((img) => (
           <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
-            <Image src={img.url} alt="" fill className="object-cover" sizes="200px" />
+            <Image src={img.url} alt="" fill unoptimized className="object-cover" sizes="200px" />
             <Button
               type="button"
               variant="danger"

@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { ListingStatus } from "@prisma/client";
 
-/** Listings visible on public search and detail (not merchant of record — owner must have active membership). */
+/** Listings visible on public search and detail (owner must not be suspended). */
 export function publicListingWhere(
   extra?: Prisma.ListingWhereInput,
 ): Prisma.ListingWhereInput {
@@ -9,11 +9,6 @@ export function publicListingWhere(
     status: ListingStatus.published,
     owner: {
       suspended: false,
-      subscription: {
-        is: {
-          status: { in: ["active", "trialing"] },
-        },
-      },
     },
     ...extra,
   };

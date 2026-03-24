@@ -1,0 +1,35 @@
+# Apache 2.4+ — reverse proxy to LuxPads (Node on 127.0.0.1:3000).
+# Enable: a2enmod proxy proxy_http headers ssl
+# Adjust paths, ServerName, and SSL paths; include from sites-enabled or paste into a vhost.
+
+<VirtualHost *:80>
+    ServerName luxpads.co
+    ServerAlias www.luxpads.co
+
+    # Redirect HTTP to HTTPS (optional; requires SSL vhost below)
+    # RewriteEngine On
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    ProxyPreserveHost On
+    RequestHeader set X-Forwarded-Proto "http"
+    ProxyPass / http://127.0.0.1:3000/
+    ProxyPassReverse / http://127.0.0.1:3000/
+
+    ErrorLog ${APACHE_LOG_DIR}/luxpads-error.log
+    CustomLog ${APACHE_LOG_DIR}/luxpads-access.log combined
+</VirtualHost>
+
+# <VirtualHost *:443>
+#     ServerName luxpads.co
+#     SSLEngine on
+#     SSLCertificateFile /etc/letsencrypt/live/luxpads.co/fullchain.pem
+#     SSLCertificateKeyFile /etc/letsencrypt/live/luxpads.co/privkey.pem
+#
+#     ProxyPreserveHost On
+#     RequestHeader set X-Forwarded-Proto "https"
+#     ProxyPass / http://127.0.0.1:3000/
+#     ProxyPassReverse / http://127.0.0.1:3000/
+#
+#     ErrorLog ${APACHE_LOG_DIR}/luxpads-ssl-error.log
+#     CustomLog ${APACHE_LOG_DIR}/luxpads-ssl-access.log combined
+# </VirtualHost>

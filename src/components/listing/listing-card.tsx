@@ -25,6 +25,7 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
             src={img}
             alt=""
             fill
+            unoptimized
             className="object-cover transition duration-500 group-hover:scale-[1.02]"
             sizes="(max-width:768px) 100vw, 33vw"
           />

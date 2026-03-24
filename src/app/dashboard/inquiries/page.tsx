@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
 export default async function InquiriesPage() {
   const session = await auth();
   if (!session?.user?.id) return null;

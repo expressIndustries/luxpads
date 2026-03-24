@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Search by destination, dates, guests, and amenities. Contact owners directly.",
 };
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };

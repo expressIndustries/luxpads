@@ -6,7 +6,6 @@ import { z } from "zod";
 import { ListingStatus } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { isSubscriptionActive } from "@/lib/subscription";
 import { uniqueSlug } from "@/lib/slug";
 
 async function requireOwner() {
@@ -28,7 +27,7 @@ export async function createDraftListing(): Promise<{ id: string } | { error: st
         title: "Untitled residence",
         summary: "Add a compelling one-paragraph summary for search results.",
         description:
-          "Describe your home’s story, layout, and what makes it special for festival-season stays.",
+          "Describe your home’s story, layout, and what makes it special for guests.",
         propertyType: "Estate",
         addressLine1: "Address — edit in listing settings",
         city: "City",
@@ -77,9 +76,7 @@ const listingUpdateSchema = z.object({
   minNights: z.coerce.number().int().min(1).max(365),
 });
 
-export type ListingFormState = { error?: string; ok?: boolean };
-
-export async function updateListing(formData: FormData): Promise<ListingFormState> {
+export async function updateListing(formData: FormData): Promise<void> {
   try {
     const ownerId = await requireOwner();
     const amenitySlugs = formData.getAll("amenitySlugs").map(String).filter(Boolean);
@@ -110,17 +107,13 @@ export async function updateListing(formData: FormData): Promise<ListingFormStat
       minNights: formData.get("minNights"),
     });
 
-    if (!parsed.success) {
-      return { error: "Validation failed. Check required fields and lengths." };
-    }
+    if (!parsed.success) return;
 
     const data = parsed.data;
     const existing = await prisma.listing.findFirst({
       where: { id: data.id, ownerId },
     });
-    if (!existing) {
-      return { error: "Listing not found." };
-    }
+    if (!existing) return;
 
     let slug = existing.slug;
     if (existing.status === ListingStatus.draft || existing.slug.startsWith("draft-")) {
@@ -173,19 +166,14 @@ export async function updateListing(formData: FormData): Promise<ListingFormStat
     revalidatePath(`/dashboard/listings/${data.id}/edit`);
     revalidatePath(`/listing/${slug}`);
     revalidatePath("/search");
-    return { ok: true };
   } catch {
-    return { error: "Could not save listing." };
+    /* noop */
   }
 }
 
 export async function publishListing(listingId: string): Promise<{ error?: string; ok?: boolean }> {
   try {
     const ownerId = await requireOwner();
-    const sub = await prisma.subscription.findUnique({ where: { userId: ownerId } });
-    if (!isSubscriptionActive(sub?.status)) {
-      return { error: "Active owner membership is required to publish listings." };
-    }
 
     const listing = await prisma.listing.findFirst({
       where: { id: listingId, ownerId },

@@ -44,7 +44,7 @@ export function ListingPublishControls({
         {status === ListingStatus.pending_review
           ? "Awaiting admin approval before going live."
           : status === ListingStatus.published
-            ? "Live on the marketplace (membership must stay active)."
+            ? "Live on the marketplace."
             : "Drafts are private until you publish."}
       </p>
       <div className="mt-4 flex flex-wrap gap-2">

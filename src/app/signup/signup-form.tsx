@@ -53,7 +53,7 @@ export function SignupForm() {
       </div>
       <label className="flex items-start gap-3 text-sm text-stone-700">
         <input type="checkbox" name="listHomes" className="mt-1 rounded border-stone-300" />
-        <span>I’m a homeowner and want to publish listings (you’ll choose a membership plan next).</span>
+        <span>I’m a homeowner and want to publish listings.</span>
       </label>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Button type="submit" disabled={pending} className="w-full">

@@ -9,6 +9,8 @@ import { InquiryForm } from "@/components/listing/inquiry-form";
 import { MarketplaceDisclaimer } from "@/components/marketplace-disclaimer";
 import { siteCopy } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -60,7 +62,7 @@ export default async function ListingDetailPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <div className="relative aspect-[21/9] min-h-[320px] w-full overflow-hidden bg-stone-100">
-        <Image src={hero} alt="" fill priority className="object-cover" sizes="100vw" />
+        <Image src={hero} alt="" fill priority unoptimized className="object-cover" sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
@@ -78,7 +80,14 @@ export default async function ListingDetailPage({ params }: Props) {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {listing.images.slice(1).map((img) => (
                 <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-stone-100">
-                  <Image src={img.url} alt={img.alt ?? listing.title} fill className="object-cover" sizes="(max-width:1024px) 100vw,50vw" />
+                  <Image
+                    src={img.url}
+                    alt={img.alt ?? listing.title}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                    sizes="(max-width:1024px) 100vw,50vw"
+                  />
                 </div>
               ))}
             </div>

@@ -21,12 +21,12 @@ const sans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
-    default: `${siteCopy.legalName} | FestivalPads`,
-    template: `%s | ${siteCopy.legalName}`,
+    default: siteCopy.legalName,
+    template: `%s | ${siteCopy.domainDisplay}`,
   },
   description: siteCopy.tagline,
   openGraph: {
-    title: `${siteCopy.legalName} | FestivalPads`,
+    title: siteCopy.legalName,
     description: siteCopy.tagline,
     type: "website",
   },

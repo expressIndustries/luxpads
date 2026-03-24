@@ -19,25 +19,21 @@ const blockSchema = z.object({
   type: z.nativeEnum(AvailabilityBlockType),
 });
 
-export async function addAvailabilityBlock(formData: FormData) {
+export async function addAvailabilityBlock(formData: FormData): Promise<void> {
   try {
     const session = await auth();
-    if (!session?.user?.id || session.user.role !== "owner") {
-      return { error: "Unauthorized" };
-    }
+    if (!session?.user?.id || session.user.role !== "owner") return;
     const parsed = blockSchema.safeParse({
       listingId: formData.get("listingId"),
       startDate: formData.get("startDate"),
       endDate: formData.get("endDate"),
       type: formData.get("type") || AvailabilityBlockType.blocked,
     });
-    if (!parsed.success) return { error: "Invalid dates." };
+    if (!parsed.success) return;
     await assertListingOwner(parsed.data.listingId, session.user.id);
     const start = startOfDay(new Date(parsed.data.startDate));
     const end = startOfDay(new Date(parsed.data.endDate));
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
-      return { error: "End date must be on or after start date." };
-    }
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return;
     await prisma.availabilityBlock.create({
       data: {
         listingId: parsed.data.listingId,
@@ -46,11 +42,15 @@ export async function addAvailabilityBlock(formData: FormData) {
         type: parsed.data.type,
       },
     });
+    const listing = await prisma.listing.findFirst({
+      where: { id: parsed.data.listingId },
+      select: { slug: true },
+    });
     revalidatePath("/dashboard/calendar");
-    revalidatePath(`/listing/${parsed.data.listingId}`);
-    return { ok: true as const };
+    if (listing) revalidatePath(`/listing/${listing.slug}`);
+    revalidatePath("/search");
   } catch {
-    return { error: "Could not add block." };
+    /* noop — form has no error UI for MVP */
   }
 }
 

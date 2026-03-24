@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ListingStatus } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardListingsPage() {
   const session = await auth();
   if (!session?.user?.id) return null;

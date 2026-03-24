@@ -1,4 +1,4 @@
-import { PrismaClient, Role, ListingStatus, SubscriptionStatus, AvailabilityBlockType } from "@prisma/client";
+import { PrismaClient, Role, ListingStatus, AvailabilityBlockType } from "@prisma/client";
 import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -11,14 +11,12 @@ async function main() {
   await prisma.listingAmenity.deleteMany();
   await prisma.listingImage.deleteMany();
   await prisma.listing.deleteMany();
-  await prisma.subscription.deleteMany();
   await prisma.ownerProfile.deleteMany();
   await prisma.user.deleteMany();
   await prisma.featuredDestination.deleteMany();
   await prisma.amenity.deleteMany();
-  await prisma.plan.deleteMany();
 
-  const password = await hash("LuxStay!demo123", 12);
+  const password = await hash("LuxPads!demo123", 12);
 
   await prisma.amenity.createMany({
     data: [
@@ -36,30 +34,19 @@ async function main() {
       { slug: "golf", label: "Golf access", category: "Outdoor" },
     ],
   });
-  const plan = await prisma.plan.create({
-    data: {
-      name: "Owner Membership",
-      description: "Publish unlimited luxury listings with concierge-level placement.",
-      stripePriceId: process.env.STRIPE_PRICE_ID_OWNER_MONTHLY || "price_seed_placeholder",
-      stripeProductId: "prod_seed_placeholder",
-      amountCents: 9900,
-      interval: "month",
-      active: true,
-    },
-  });
 
   const admin = await prisma.user.create({
     data: {
-      email: "admin@festivalpads.com",
+      email: "admin@luxpads.co",
       passwordHash: password,
-      name: "FestivalPads Admin",
+      name: "LuxPads Admin",
       role: Role.admin,
     },
   });
 
   const owner1 = await prisma.user.create({
     data: {
-      email: "owner1@festivalpads.com",
+      email: "owner1@luxpads.co",
       passwordHash: password,
       name: "Elena Whitmore",
       role: Role.owner,
@@ -67,18 +54,9 @@ async function main() {
       ownerProfile: {
         create: {
           displayName: "Whitmore Estates",
-          bio: "Curated mountain and coastal homes for festival seasons and extended stays.",
-          contactEmail: "owner1@festivalpads.com",
+          bio: "Curated mountain and coastal homes for memorable stays.",
+          contactEmail: "owner1@luxpads.co",
           contactPhone: "+1 310 555 0142",
-        },
-      },
-      subscription: {
-        create: {
-          planId: plan.id,
-          status: SubscriptionStatus.active,
-          stripeCustomerId: "cus_seed_owner1",
-          stripeSubscriptionId: "sub_seed_owner1",
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       },
     },
@@ -87,7 +65,7 @@ async function main() {
 
   const owner2 = await prisma.user.create({
     data: {
-      email: "owner2@festivalpads.com",
+      email: "owner2@luxpads.co",
       passwordHash: password,
       name: "Marcus Chen",
       role: Role.owner,
@@ -95,16 +73,7 @@ async function main() {
         create: {
           displayName: "Chen Collective",
           bio: "Architect-led residences across the Mountain West and wine country.",
-          contactEmail: "owner2@festivalpads.com",
-        },
-      },
-      subscription: {
-        create: {
-          planId: plan.id,
-          status: SubscriptionStatus.active,
-          stripeCustomerId: "cus_seed_owner2",
-          stripeSubscriptionId: "sub_seed_owner2",
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          contactEmail: "owner2@luxpads.co",
         },
       },
     },
@@ -113,7 +82,7 @@ async function main() {
 
   const owner3 = await prisma.user.create({
     data: {
-      email: "owner3@festivalpads.com",
+      email: "owner3@luxpads.co",
       passwordHash: password,
       name: "Sofia Navarro",
       role: Role.owner,
@@ -121,16 +90,7 @@ async function main() {
         create: {
           displayName: "Navarro Villas",
           bio: "Desert modernism and coastal calm—always owner-managed.",
-          contactEmail: "owner3@festivalpads.com",
-        },
-      },
-      subscription: {
-        create: {
-          planId: plan.id,
-          status: SubscriptionStatus.active,
-          stripeCustomerId: "cus_seed_owner3",
-          stripeSubscriptionId: "sub_seed_owner3",
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          contactEmail: "owner3@luxpads.co",
         },
       },
     },
@@ -139,7 +99,7 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      email: "renter@festivalpads.com",
+      email: "renter@luxpads.co",
       passwordHash: password,
       name: "Jordan Lee",
       role: Role.renter,
@@ -180,7 +140,7 @@ async function main() {
       title: "Aspen Ridge Glass House",
       summary: "Floor-to-ceiling views, quiet ridge line, minutes to downtown Aspen.",
       description:
-        "A sculptural retreat wrapped in glass and warm oak. Designed for Sundance-adjacent entertaining with a quiet, residential feel. Heated terraces, radiant floors, and a pantry ready for private chef service.",
+        "A sculptural retreat wrapped in glass and warm oak. Designed for mountain-town entertaining with a quiet, residential feel. Heated terraces, radiant floors, and a pantry ready for private chef service.",
       propertyType: "Mountain Lodge",
       city: "Aspen",
       state: "Colorado",
@@ -246,7 +206,7 @@ async function main() {
       title: "Napa Vineyard Estate",
       summary: "Rows of cabernet at your doorstep, a cellar for collectors, and slow mornings on the terrace.",
       description:
-        "A wine country compound with a chef’s kitchen, outdoor hearth, and guest house. Perfect for festival weekends that spill into Monday tastings.",
+        "A wine country compound with a chef’s kitchen, outdoor hearth, and guest house. Perfect for long weekends that spill into Monday tastings.",
       propertyType: "Wine Country Retreat",
       city: "Napa",
       state: "California",
@@ -279,7 +239,7 @@ async function main() {
       title: "Scottsdale Desert Atrium",
       summary: "Courtyard pools, soft desert light, and resort-quiet privacy.",
       description:
-        "Indoor-outdoor living with rammed earth tones, a 50-foot pool, and a gym bathed in morning sun. Built for extended stays during spring festivals and winter escapes.",
+        "Indoor-outdoor living with rammed earth tones, a 50-foot pool, and a gym bathed in morning sun. Built for extended spring and winter escapes.",
       propertyType: "Desert Oasis",
       city: "Scottsdale",
       state: "Arizona",
@@ -298,7 +258,7 @@ async function main() {
       sleepingArrangements: "Casita suite; four interior suites; bunk room optional for families.",
       houseRules: "No glass near pool. Pets considered case-by-case.",
       checkInOut: "Smart home tutorial on arrival.",
-      cancellationPolicy: "Owner-managed; festival weeks are firm once contracted.",
+      cancellationPolicy: "Owner-managed; peak weeks are firm once contracted.",
       featured: true,
       images: [
         "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1600&q=80",
@@ -378,7 +338,7 @@ async function main() {
       title: "Palm Springs Modern Oasis",
       summary: "Courtyard pool, mountain silhouette, and gallery-white walls.",
       description:
-        "Classic desert modern lines with new systems and a primary suite that opens to water and sky. Perfect for festival crews who want calm, not crowds.",
+        "Classic desert modern lines with new systems and a primary suite that opens to water and sky. Perfect for groups who want calm, not crowds.",
       propertyType: "Desert Oasis",
       city: "Palm Springs",
       state: "California",
@@ -430,7 +390,7 @@ async function main() {
       sleepingArrangements: "Two primary suites; bunk room; two queens; office sleeper.",
       houseRules: "No smoking. Garage EV plug shared schedule.",
       checkInOut: "4pm / 10am peak weeks.",
-      cancellationPolicy: "Owner-managed; Sundance weeks non-refundable once contracted.",
+      cancellationPolicy: "Owner-managed; peak holiday weeks non-refundable once contracted.",
       featured: true,
       images: [
         "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1600&q=80",
@@ -493,6 +453,7 @@ async function main() {
       nightlyRateCents: 220000,
       minNights: 4,
       cleaningFeeNote: "Gear storage in building.",
+      sleepingArrangements: "Three bedrooms: two kings, one queen; loft sitting area.",
       houseRules: "HOA quiet hours enforced.",
       checkInOut: "Meet greeter at lobby.",
       cancellationPolicy: "Owner-managed.",
@@ -556,7 +517,7 @@ async function main() {
         startDate: new Date("2026-01-20"),
         endDate: new Date("2026-01-28"),
         type: AvailabilityBlockType.booked,
-        note: "Festival hold",
+        note: "Private booking",
       },
     });
     await prisma.availabilityBlock.create({
@@ -576,7 +537,7 @@ async function main() {
       data: {
         listingId: firstListing.id,
         renterName: "Jordan Lee",
-        renterEmail: "renter@festivalpads.com",
+        renterEmail: "renter@luxpads.co",
         renterPhone: "+1 415 555 0199",
         checkIn: new Date("2026-03-01"),
         checkOut: new Date("2026-03-06"),
@@ -592,7 +553,7 @@ async function main() {
       {
         slug: "aspen",
         name: "Aspen & Snowmass",
-        subtitle: "Sundance season energy, Rocky Mountain calm",
+        subtitle: "Peak season energy, Rocky Mountain calm",
         imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
         sortOrder: 0,
       },
@@ -631,10 +592,10 @@ async function main() {
   });
 
   console.log("Seed complete.");
-  console.log("Admin:", "admin@festivalpads.com");
-  console.log("Owners:", "owner1@festivalpads.com", "owner2@festivalpads.com", "owner3@festivalpads.com");
-  console.log("Renter:", "renter@festivalpads.com");
-  console.log("Password for all:", "LuxStay!demo123");
+  console.log("Admin:", "admin@luxpads.co");
+  console.log("Owners:", "owner1@luxpads.co", "owner2@luxpads.co", "owner3@luxpads.co");
+  console.log("Renter:", "renter@luxpads.co");
+  console.log("Password for all:", "LuxPads!demo123");
 }
 
 main()

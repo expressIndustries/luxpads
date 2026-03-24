@@ -11,7 +11,6 @@ export async function getPublicListingBySlug(slug: string) {
       owner: {
         include: {
           ownerProfile: true,
-          subscription: { include: { plan: true } },
         },
       },
     },
