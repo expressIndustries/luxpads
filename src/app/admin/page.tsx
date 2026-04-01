@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ListingStatus, Role } from "@prisma/client";
 import { adminSetListingFeatured, adminSetListingStatus, adminSetUserSuspended } from "@/lib/actions/admin-actions";
+import { AdminImpersonateButton } from "@/components/admin/admin-impersonate-button";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/utils";
 
@@ -52,6 +53,10 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-stone-600">{formatMoney(l.nightlyRateCents)}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
+                      <AdminImpersonateButton
+                        ownerId={l.ownerId}
+                        ownerLabel={l.owner.ownerProfile?.displayName ?? l.owner.email}
+                      />
                       <Link
                         href={`/admin/listings/${l.id}/edit`}
                         className="inline-flex items-center rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-800 hover:border-stone-300"
@@ -119,6 +124,10 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-xs">{u.role}</td>
                   <td className="px-4 py-3 text-xs">{u.suspended ? "yes" : "no"}</td>
                   <td className="px-4 py-3">
+                    <div className="flex flex-col items-start gap-2">
+                    {u.role === Role.owner && !u.suspended ? (
+                      <AdminImpersonateButton ownerId={u.id} ownerLabel={u.name ?? u.email} />
+                    ) : null}
                     {u.role !== Role.admin ? (
                       <form
                         action={async () => {
@@ -133,6 +142,7 @@ export default async function AdminPage() {
                     ) : (
                       <span className="text-xs text-stone-400">—</span>
                     )}
+                    </div>
                   </td>
                 </tr>
               ))}

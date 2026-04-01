@@ -1,4 +1,8 @@
 export const PROPERTY_TYPES = [
+  "Single Family Home",
+  "Condo / Townhome",
+  "Apartment",
+  "Commercial Space",
   "Estate",
   "Villa",
   "Mountain Lodge",

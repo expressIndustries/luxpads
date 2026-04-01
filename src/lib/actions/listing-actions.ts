@@ -85,7 +85,12 @@ const listingUpdateSchema = z.object({
   minNights: z.coerce.number().int().min(1).max(365),
 });
 
-export async function updateListing(formData: FormData): Promise<void> {
+export type ListingSaveState = { ok?: boolean; error?: string };
+
+export async function updateListing(
+  _prev: ListingSaveState,
+  formData: FormData,
+): Promise<ListingSaveState> {
   try {
     const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
     const amenitySlugs = formData.getAll("amenitySlugs").map(String).filter(Boolean);
@@ -116,13 +121,20 @@ export async function updateListing(formData: FormData): Promise<void> {
       minNights: formData.get("minNights"),
     });
 
-    if (!parsed.success) return;
+    if (!parsed.success) {
+      return {
+        error:
+          "Could not save. Check that your summary is at least 20 characters, your description at least 40, and all required fields are valid.",
+      };
+    }
 
     const data = parsed.data;
     const existing = await prisma.listing.findFirst({
       where: isAdmin ? { id: data.id } : { id: data.id, ownerId },
     });
-    if (!existing) return;
+    if (!existing) {
+      return { error: "Listing not found or you don’t have access to edit it." };
+    }
 
     let slug = existing.slug;
     if (existing.status === ListingStatus.draft || existing.slug.startsWith("draft-")) {
@@ -177,8 +189,9 @@ export async function updateListing(formData: FormData): Promise<void> {
     revalidatePath(`/listing/${slug}`);
     revalidatePath("/search");
     revalidatePath("/admin");
+    return { ok: true };
   } catch {
-    /* noop */
+    return { error: "Something went wrong while saving. Please try again." };
   }
 }
 
