@@ -5,7 +5,8 @@ import { saveUploadedImage } from "@/lib/storage";
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "owner") {
+  const role = session?.user?.role;
+  if (!session?.user?.id || (role !== "owner" && role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   }
 
   const listing = await prisma.listing.findFirst({
-    where: { id: listingId, ownerId: session.user.id },
+    where: role === "admin" ? { id: listingId } : { id: listingId, ownerId: session.user.id },
   });
   if (!listing) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });

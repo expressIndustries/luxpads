@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ListingStatus, Role } from "@prisma/client";
 import { adminSetListingFeatured, adminSetListingStatus, adminSetUserSuspended } from "@/lib/actions/admin-actions";
@@ -51,6 +52,12 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-stone-600">{formatMoney(l.nightlyRateCents)}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/admin/listings/${l.id}/edit`}
+                        className="inline-flex items-center rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-800 hover:border-stone-300"
+                      >
+                        Edit
+                      </Link>
                       {l.status !== ListingStatus.published ? (
                         <form
                           action={async () => {

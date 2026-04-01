@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { ListingStatus } from "@prisma/client";
+import { ListingStatus, type Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uniqueSlug } from "@/lib/slug";
@@ -14,6 +14,15 @@ async function requireOwner() {
     throw new Error("Unauthorized");
   }
   return session.user.id;
+}
+
+/** Owner (their listing) or admin (any listing). */
+async function requireOwnerOrAdmin(): Promise<{ userId: string; isAdmin: boolean }> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const role = session.user.role as Role;
+  if (role !== "owner" && role !== "admin") throw new Error("Unauthorized");
+  return { userId: session.user.id, isAdmin: role === "admin" };
 }
 
 export async function createDraftListing(): Promise<{ id: string } | { error: string }> {
@@ -78,7 +87,7 @@ const listingUpdateSchema = z.object({
 
 export async function updateListing(formData: FormData): Promise<void> {
   try {
-    const ownerId = await requireOwner();
+    const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
     const amenitySlugs = formData.getAll("amenitySlugs").map(String).filter(Boolean);
 
     const parsed = listingUpdateSchema.safeParse({
@@ -111,7 +120,7 @@ export async function updateListing(formData: FormData): Promise<void> {
 
     const data = parsed.data;
     const existing = await prisma.listing.findFirst({
-      where: { id: data.id, ownerId },
+      where: isAdmin ? { id: data.id } : { id: data.id, ownerId },
     });
     if (!existing) return;
 
@@ -164,8 +173,10 @@ export async function updateListing(formData: FormData): Promise<void> {
     ]);
 
     revalidatePath(`/dashboard/listings/${data.id}/edit`);
+    revalidatePath(`/admin/listings/${data.id}/edit`);
     revalidatePath(`/listing/${slug}`);
     revalidatePath("/search");
+    revalidatePath("/admin");
   } catch {
     /* noop */
   }
@@ -173,10 +184,10 @@ export async function updateListing(formData: FormData): Promise<void> {
 
 export async function publishListing(listingId: string): Promise<{ error?: string; ok?: boolean }> {
   try {
-    const ownerId = await requireOwner();
+    const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
 
     const listing = await prisma.listing.findFirst({
-      where: { id: listingId, ownerId },
+      where: isAdmin ? { id: listingId } : { id: listingId, ownerId },
       include: { images: true },
     });
     if (!listing) return { error: "Listing not found." };
@@ -197,8 +208,10 @@ export async function publishListing(listingId: string): Promise<{ error?: strin
     });
 
     revalidatePath("/dashboard/listings");
+    revalidatePath(`/admin/listings/${listingId}/edit`);
     revalidatePath("/search");
     revalidatePath("/");
+    revalidatePath("/admin");
     return { ok: true };
   } catch {
     return { error: "Could not publish." };
@@ -207,13 +220,15 @@ export async function publishListing(listingId: string): Promise<{ error?: strin
 
 export async function unpublishListing(listingId: string) {
   try {
-    const ownerId = await requireOwner();
+    const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
     await prisma.listing.updateMany({
-      where: { id: listingId, ownerId },
+      where: isAdmin ? { id: listingId } : { id: listingId, ownerId },
       data: { status: ListingStatus.draft },
     });
     revalidatePath("/dashboard/listings");
+    revalidatePath(`/admin/listings/${listingId}/edit`);
     revalidatePath("/search");
+    revalidatePath("/admin");
     return { ok: true as const };
   } catch {
     return { error: "Could not unpublish." };
@@ -221,18 +236,23 @@ export async function unpublishListing(listingId: string) {
 }
 
 export async function deleteListingImage(imageId: string, listingId: string) {
-  const ownerId = await requireOwner();
+  const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
   const img = await prisma.listingImage.findFirst({
-    where: { id: imageId, listingId, listing: { ownerId } },
+    where: isAdmin
+      ? { id: imageId, listingId }
+      : { id: imageId, listingId, listing: { ownerId } },
   });
   if (!img) throw new Error("Not found");
   await prisma.listingImage.delete({ where: { id: imageId } });
   revalidatePath(`/dashboard/listings/${listingId}/edit`);
+  revalidatePath(`/admin/listings/${listingId}/edit`);
 }
 
 export async function reorderListingImages(listingId: string, orderedIds: string[]) {
-  const ownerId = await requireOwner();
-  const listing = await prisma.listing.findFirst({ where: { id: listingId, ownerId } });
+  const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
+  const listing = await prisma.listing.findFirst({
+    where: isAdmin ? { id: listingId } : { id: listingId, ownerId },
+  });
   if (!listing) throw new Error("Not found");
   await prisma.$transaction(
     orderedIds.map((id, index) =>
@@ -243,4 +263,5 @@ export async function reorderListingImages(listingId: string, orderedIds: string
     ),
   );
   revalidatePath(`/dashboard/listings/${listingId}/edit`);
+  revalidatePath(`/admin/listings/${listingId}/edit`);
 }

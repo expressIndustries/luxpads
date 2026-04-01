@@ -39,6 +39,9 @@ export function SiteFooter() {
           </div>
           <div className="space-y-2 text-sm text-stone-600">
             <p className="font-medium text-stone-900">Resources</p>
+            <Link href="/rent-home-for-sundance-film-festival-boulder" className="block hover:text-stone-900">
+              Rent for Sundance
+            </Link>
             <a
               href="/docs/2025%20Residential%20Lease%20Agreement%20-%20BLANK.docx"
               className="block hover:text-stone-900"
