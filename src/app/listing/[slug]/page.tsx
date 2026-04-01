@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getPublicListingBySlug } from "@/lib/queries/listing-by-slug";
-import { formatMoney } from "@/lib/utils";
+import { formatHostDisplayName, formatMoney } from "@/lib/utils";
+import {
+  ListingGalleryLightboxGrid,
+  ListingGalleryLightboxProvider,
+  ListingHeroLightboxTrigger,
+} from "@/components/listing/listing-gallery-lightbox";
 import { MapPlaceholder } from "@/components/listing/map-placeholder";
 import { AvailabilityPreview } from "@/components/listing/availability-preview";
 import { InquiryForm } from "@/components/listing/inquiry-form";
@@ -33,9 +38,12 @@ export default async function ListingDetailPage({ params }: Props) {
   const listing = await getPublicListingBySlug(slug);
   if (!listing) notFound();
 
-  const host = listing.owner.ownerProfile?.displayName ?? listing.owner.name ?? "Homeowner";
+  const host = formatHostDisplayName(
+    listing.owner.ownerProfile?.displayName ?? listing.owner.name ?? "Homeowner",
+  );
   const hostBio = listing.owner.ownerProfile?.bio;
   const hero = listing.images[0]?.url ?? "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80";
+  const galleryImages = listing.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt }));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -60,37 +68,28 @@ export default async function ListingDetailPage({ params }: Props) {
     <article className="pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <div className="relative aspect-[21/9] min-h-[320px] w-full overflow-hidden bg-stone-100">
-        <Image src={hero} alt="" fill priority unoptimized className="object-cover" sizes="100vw" />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
-            {listing.city}, {listing.state}
-          </p>
-          <h1 className="mt-3 max-w-4xl font-serif text-4xl text-white sm:text-5xl">{listing.title}</h1>
-          <p className="mt-4 max-w-2xl text-sm text-white/90">{listing.summary}</p>
+      <ListingGalleryLightboxProvider images={galleryImages} listingTitle={listing.title}>
+        <div className="relative aspect-[21/9] min-h-[320px] w-full overflow-hidden bg-stone-100">
+          <Image src={hero} alt="" fill priority unoptimized className="object-cover" sizes="100vw" />
+          <ListingHeroLightboxTrigger />
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-stone-950/50 to-transparent" />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[3] mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
+              {listing.city}, {listing.state}
+            </p>
+            <h1 className="mt-3 max-w-4xl font-serif text-4xl text-white sm:text-5xl">{listing.title}</h1>
+            <p className="mt-4 max-w-2xl text-sm text-white/90">{listing.summary}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-[1fr_380px] sm:px-6 lg:px-8">
-        <div className="space-y-12">
-          <section>
-            <h2 className="font-serif text-2xl text-stone-900">Gallery</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {listing.images.slice(1).map((img) => (
-                <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-stone-100">
-                  <Image
-                    src={img.url}
-                    alt={img.alt ?? listing.title}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                    sizes="(max-width:1024px) 100vw,50vw"
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-[1fr_380px] sm:px-6 lg:px-8">
+          <div className="space-y-12">
+            {listing.images.length > 1 ? (
+              <section>
+                <h2 className="font-serif text-2xl text-stone-900">Gallery</h2>
+                <ListingGalleryLightboxGrid />
+              </section>
+            ) : null}
 
           <section className="space-y-4">
             <h2 className="font-serif text-2xl text-stone-900">About this home</h2>
@@ -210,6 +209,7 @@ export default async function ListingDetailPage({ params }: Props) {
           </div>
         </aside>
       </div>
+      </ListingGalleryLightboxProvider>
     </article>
   );
 }

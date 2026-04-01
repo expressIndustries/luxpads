@@ -439,7 +439,8 @@ function main() {
   lines.push("SET FOREIGN_KEY_CHECKS=0;");
   lines.push("SET NAMES utf8mb4;");
   lines.push("");
-  lines.push("DELETE FROM `Inquiry`;");
+  lines.push("DELETE FROM `Message`;");
+  lines.push("DELETE FROM `Conversation`;");
   lines.push("DELETE FROM `AdminAction`;");
   lines.push("DELETE FROM `Favorite`;");
   lines.push("DELETE FROM `AvailabilityBlock`;");
@@ -517,8 +518,15 @@ function main() {
   lines.push("");
 
   const firstListingId = homes[0]!.id;
+  const firstOwnerId = ownerId(homes[0]!.owner);
+  const convId = "cseedconv00000000000001";
+  const msgId = "cseedmsg00000000000001";
+  const demoThreadToken = "cafebabecafebabecafebabecafebabecafebabecafebabe";
   lines.push(
-    `INSERT INTO \`Inquiry\` (\`id\`,\`listingId\`,\`renterName\`,\`renterEmail\`,\`renterPhone\`,\`checkIn\`,\`checkOut\`,\`guestCount\`,\`message\`,\`read\`,\`renterUserId\`,\`createdAt\`) VALUES (${q("cseedinquiry000000000001")},${q(firstListingId)},${q("Jordan Lee")},${q("renter@luxpads.co")},${q("+1 415 555 0199")},'2026-03-01','2026-03-06',4,${q("We're a small production team looking for a quiet stay with strong Wi‑Fi and space for 4. Could you share your direct booking process and any references?")},0,${q(U.renter)},${now3()});`,
+    `INSERT INTO \`Conversation\` (\`id\`,\`listingId\`,\`ownerId\`,\`renterName\`,\`renterEmail\`,\`renterPhone\`,\`renterUserId\`,\`checkIn\`,\`checkOut\`,\`guestCount\`,\`mailThreadToken\`,\`createdAt\`,\`updatedAt\`) VALUES (${q(convId)},${q(firstListingId)},${q(firstOwnerId)},${q("Jordan Lee")},${q("renter@luxpads.co")},${q("+1 415 555 0199")},${q(U.renter)},'2026-03-01','2026-03-06',4,${q(demoThreadToken)},${now3()},${now3()});`,
+  );
+  lines.push(
+    `INSERT INTO \`Message\` (\`id\`,\`conversationId\`,\`senderRole\`,\`body\`,\`createdAt\`,\`readByOwnerAt\`,\`readByRenterAt\`) VALUES (${q(msgId)},${q(convId)},'renter',${q("We're a small production team looking for a quiet stay with strong Wi‑Fi and space for 4. Could you share your direct booking process and any references?")},${now3()},NULL,NULL);`,
   );
   lines.push("");
 

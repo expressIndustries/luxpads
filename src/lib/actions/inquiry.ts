@@ -3,8 +3,11 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { publicListingWhere } from "@/lib/listing-visibility";
-import { notifyOwnerOfInquiry } from "@/lib/email";
+import { notifyOwnerOfNewConversation, notifyOwnerOfRenterMessage } from "@/lib/email";
 import { auth } from "@/auth";
+import { MessageSender } from "@prisma/client";
+import { normalizeRenterEmail } from "@/lib/messaging";
+import { generateMailThreadToken } from "@/lib/mailgun/thread-token";
 
 const schema = z.object({
   listingSlug: z.string().min(1),
@@ -55,29 +58,78 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
   const session = await auth();
   const checkIn = parsed.data.checkIn ? new Date(parsed.data.checkIn) : null;
   const checkOut = parsed.data.checkOut ? new Date(parsed.data.checkOut) : null;
+  const emailNorm = normalizeRenterEmail(parsed.data.renterEmail);
 
-  await prisma.inquiry.create({
-    data: {
-      listingId: listing.id,
-      renterName: parsed.data.renterName,
-      renterEmail: parsed.data.renterEmail,
-      renterPhone: parsed.data.renterPhone || null,
-      message: parsed.data.message,
-      guestCount: parsed.data.guestCount ?? null,
-      checkIn: checkIn && !Number.isNaN(checkIn.getTime()) ? checkIn : null,
-      checkOut: checkOut && !Number.isNaN(checkOut.getTime()) ? checkOut : null,
-      renterUserId: session?.user?.id ?? null,
+  const existing = await prisma.conversation.findUnique({
+    where: {
+      listingId_renterEmail: { listingId: listing.id, renterEmail: emailNorm },
     },
   });
 
   const ownerEmail = listing.owner.ownerProfile?.contactEmail ?? listing.owner.email;
-  await notifyOwnerOfInquiry({
-    ownerEmail,
-    listingTitle: listing.title,
-    renterName: parsed.data.renterName,
-    renterEmail: parsed.data.renterEmail,
-    messagePreview: parsed.data.message.slice(0, 400),
-  });
+  const messageBody = parsed.data.message.trim();
+
+  if (existing) {
+    await prisma.$transaction([
+      prisma.message.create({
+        data: {
+          conversationId: existing.id,
+          senderRole: MessageSender.renter,
+          body: messageBody,
+        },
+      }),
+      prisma.conversation.update({
+        where: { id: existing.id },
+        data: {
+          renterName: parsed.data.renterName,
+          renterPhone: parsed.data.renterPhone || null,
+          renterUserId: session?.user?.id ?? existing.renterUserId,
+          checkIn: checkIn && !Number.isNaN(checkIn.getTime()) ? checkIn : existing.checkIn,
+          checkOut: checkOut && !Number.isNaN(checkOut.getTime()) ? checkOut : existing.checkOut,
+          guestCount: parsed.data.guestCount ?? existing.guestCount,
+        },
+      }),
+    ]);
+
+    await notifyOwnerOfRenterMessage({
+      ownerEmail,
+      listingTitle: listing.title,
+      guestDisplayName: parsed.data.renterName,
+      messagePreview: messageBody.slice(0, 400),
+      conversationId: existing.id,
+      mailThreadToken: existing.mailThreadToken,
+    });
+  } else {
+    const conv = await prisma.conversation.create({
+      data: {
+        listingId: listing.id,
+        ownerId: listing.ownerId,
+        renterName: parsed.data.renterName,
+        renterEmail: emailNorm,
+        renterPhone: parsed.data.renterPhone || null,
+        renterUserId: session?.user?.id ?? null,
+        checkIn: checkIn && !Number.isNaN(checkIn.getTime()) ? checkIn : null,
+        checkOut: checkOut && !Number.isNaN(checkOut.getTime()) ? checkOut : null,
+        guestCount: parsed.data.guestCount ?? null,
+        mailThreadToken: generateMailThreadToken(),
+        messages: {
+          create: {
+            senderRole: MessageSender.renter,
+            body: messageBody,
+          },
+        },
+      },
+    });
+
+    await notifyOwnerOfNewConversation({
+      ownerEmail,
+      listingTitle: listing.title,
+      guestDisplayName: parsed.data.renterName,
+      messagePreview: messageBody.slice(0, 400),
+      conversationId: conv.id,
+      mailThreadToken: conv.mailThreadToken,
+    });
+  }
 
   return { ok: true };
 }

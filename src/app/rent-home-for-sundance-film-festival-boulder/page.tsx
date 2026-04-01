@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { siteCopy } from "@/lib/constants";
+import { sundancePageImages } from "@/content/sundance-page-images";
 
 const OFFICIAL_SUNDANCE_BOULDER =
   "https://www.sundance.org/blogs/2027-sundance-film-festival-to-take-place-january-21-31-in-boulder-colorado/";
@@ -13,44 +14,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: `Sundance Boulder 2027 | ${siteCopy.legalName}`,
     description: "Rent your home for the 2027 Sundance Film Festival in Boulder, Colorado.",
+    images: [{ url: sundancePageImages.hero, alt: "Sundance Film Festival in Boulder — LuxPads" }],
   },
 };
-
-const boulderMoments = [
-  {
-    src: "https://images.unsplash.com/photo-1594979256264-cb9aac7134c7?w=1200&q=80",
-    alt: "Open trail with mountain ridgeline and blue sky, Front Range style landscape",
-    caption: "Front Range views",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1569937756440-6adf4f448f1f?w=1200&q=80",
-    alt: "Pedestrian street with trees and storefronts, downtown festival-town feel",
-    caption: "Walkable downtown energy",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1476041800959-2f6bb412c8ce?w=1200&q=80",
-    alt: "Mountain cabin and pine forest in snow, Rocky Mountain winter mood",
-    caption: "Rocky Mountain winter",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=1200&q=80",
-    alt: "Ski town street with mountains in the distance",
-    caption: "Mountain town character",
-  },
-];
-
-const homeInspiration = [
-  {
-    src: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
-    alt: "Bright open living space with large windows and natural light",
-    caption: "Homes guests remember",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80",
-    alt: "Modern house exterior with clean lines and landscaping",
-    caption: "Boulder-area curb appeal",
-  },
-];
 
 const venueAreas = [
   {
@@ -116,11 +82,10 @@ export default function SundanceBoulderPage() {
     <div className="bg-[#faf9f7]">
       <section className="relative isolate min-h-[62vh] overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1632321234862-3918d6eb073b?w=2000&q=80"
+          src={sundancePageImages.hero}
           alt=""
           fill
           priority
-          unoptimized
           className="object-cover"
           sizes="100vw"
         />
@@ -175,10 +140,10 @@ export default function SundanceBoulderPage() {
         <div className="mt-12">
           <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Boulder in the frame</h3>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {boulderMoments.map((img) => (
+            {sundancePageImages.boulderMoments.map((img) => (
               <figure key={img.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="relative aspect-[4/3]">
-                  <Image src={img.src} alt={img.alt} fill unoptimized className="object-cover" sizes="(max-width:1024px) 50vw, 25vw" />
+                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width:1024px) 50vw, 25vw" />
                 </div>
                 <figcaption className="border-t border-stone-100 px-3 py-2 text-xs text-stone-600">{img.caption}</figcaption>
               </figure>
@@ -193,10 +158,10 @@ export default function SundanceBoulderPage() {
             they want more than a hotel during a busy festival week.
           </p>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {homeInspiration.map((img) => (
+            {sundancePageImages.homeInspiration.map((img) => (
               <figure key={img.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="relative aspect-[16/10]">
-                  <Image src={img.src} alt={img.alt} fill unoptimized className="object-cover" sizes="(max-width:768px) 100vw, 50vw" />
+                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width:768px) 100vw, 50vw" />
                 </div>
                 <figcaption className="border-t border-stone-100 px-4 py-3 text-sm text-stone-700">{img.caption}</figcaption>
               </figure>

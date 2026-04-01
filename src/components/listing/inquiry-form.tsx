@@ -27,8 +27,9 @@ export function InquiryForm({ listingSlug }: { listingSlug: string }) {
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-6 text-sm text-emerald-950">
         <p className="font-medium">Inquiry sent</p>
         <p className="mt-2 text-emerald-900/90">
-          The homeowner will reply directly. Final agreements and payments are handled off-platform between you and the
-          owner.
+          The homeowner can reply here on LuxPads and you will be notified by email. If you have an account with the same
+          email, open Messages in your account to continue the thread. Final agreements and payments stay between you
+          and the owner.
         </p>
       </div>
     );

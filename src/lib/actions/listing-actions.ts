@@ -265,3 +265,31 @@ export async function reorderListingImages(listingId: string, orderedIds: string
   revalidatePath(`/dashboard/listings/${listingId}/edit`);
   revalidatePath(`/admin/listings/${listingId}/edit`);
 }
+
+/** Move image to sortOrder 0 — used as hero on listing page and cards. */
+export async function setHighlightListingImage(imageId: string, listingId: string) {
+  const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
+  const listing = await prisma.listing.findFirst({
+    where: isAdmin ? { id: listingId } : { id: listingId, ownerId },
+    select: { id: true, slug: true, images: { orderBy: { sortOrder: "asc" }, select: { id: true } } },
+  });
+  if (!listing) throw new Error("Not found");
+  const ids = listing.images.map((i) => i.id);
+  if (!ids.includes(imageId)) throw new Error("Not found");
+  const reordered = [imageId, ...ids.filter((id) => id !== imageId)];
+  await prisma.$transaction(
+    reordered.map((id, index) =>
+      prisma.listingImage.updateMany({
+        where: { id, listingId },
+        data: { sortOrder: index },
+      }),
+    ),
+  );
+  revalidatePath(`/dashboard/listings/${listingId}/edit`);
+  revalidatePath(`/admin/listings/${listingId}/edit`);
+  revalidatePath(`/listing/${listing.slug}`);
+  revalidatePath("/dashboard/listings");
+  revalidatePath("/search");
+  revalidatePath("/");
+  revalidatePath("/admin");
+}

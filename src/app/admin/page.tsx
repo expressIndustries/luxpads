@@ -8,11 +8,11 @@ import { formatMoney } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const [ownerCount, listingPublished, pendingReview, inquiryCount, listings, users] = await Promise.all([
+  const [ownerCount, listingPublished, pendingReview, conversationCount, listings, users] = await Promise.all([
     prisma.user.count({ where: { role: Role.owner } }),
     prisma.listing.count({ where: { status: ListingStatus.published } }),
     prisma.listing.count({ where: { status: ListingStatus.pending_review } }),
-    prisma.inquiry.count(),
+    prisma.conversation.count(),
     prisma.listing.findMany({
       orderBy: { updatedAt: "desc" },
       take: 40,
@@ -27,7 +27,7 @@ export default async function AdminPage() {
         <Metric label="Owners" value={ownerCount} />
         <Metric label="Published listings" value={listingPublished} />
         <Metric label="Pending review" value={pendingReview} />
-        <Metric label="Inquiries" value={inquiryCount} />
+        <Metric label="Conversations" value={conversationCount} />
       </section>
 
       <section>

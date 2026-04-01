@@ -1,10 +1,12 @@
-import { PrismaClient, Role, ListingStatus, AvailabilityBlockType } from "@prisma/client";
+import { randomBytes } from "crypto";
+import { PrismaClient, Role, ListingStatus, AvailabilityBlockType, MessageSender } from "@prisma/client";
 import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.inquiry.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.conversation.deleteMany();
   await prisma.adminAction.deleteMany();
   await prisma.favorite.deleteMany();
   await prisma.availabilityBlock.deleteMany();
@@ -533,17 +535,25 @@ async function main() {
 
   const firstListing = await prisma.listing.findFirst({ orderBy: { createdAt: "asc" } });
   if (firstListing) {
-    await prisma.inquiry.create({
+    const renterUser = await prisma.user.findFirst({ where: { email: "renter@luxpads.co" } });
+    await prisma.conversation.create({
       data: {
         listingId: firstListing.id,
+        ownerId: firstListing.ownerId,
         renterName: "Jordan Lee",
         renterEmail: "renter@luxpads.co",
         renterPhone: "+1 415 555 0199",
+        renterUserId: renterUser?.id ?? null,
         checkIn: new Date("2026-03-01"),
         checkOut: new Date("2026-03-06"),
         guestCount: 4,
-        message:
-          "We're a small production team looking for a quiet stay with strong Wi‑Fi and space for 4. Could you share your direct booking process and any references?",
+        mailThreadToken: randomBytes(24).toString("hex"),
+        messages: {
+          create: {
+            senderRole: MessageSender.renter,
+            body: "We're a small production team looking for a quiet stay with strong Wi‑Fi and space for 4. Could you share your direct booking process and any references?",
+          },
+        },
       },
     });
   }

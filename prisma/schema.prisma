@@ -29,6 +29,11 @@ enum AvailabilityBlockType {
   booked
 }
 
+enum MessageSender {
+  renter
+  owner
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -41,10 +46,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  ownerProfile   OwnerProfile?
-  listings       Listing[]       @relation("OwnerListings")
-  inquiriesSent  Inquiry[]       @relation("RenterInquiries")
-  favorites      Favorite[]
+  ownerProfile           OwnerProfile?
+  listings               Listing[]       @relation("OwnerListings")
+  conversationsOwned     Conversation[]  @relation("OwnerConversations")
+  conversationsAsRenter  Conversation[]  @relation("RenterConversations")
+  favorites              Favorite[]
   adminActions   AdminAction[]   @relation("AdminActions")
 }
 
@@ -98,11 +104,11 @@ model Listing {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  images       ListingImage[]
-  amenities    ListingAmenity[]
-  availability AvailabilityBlock[]
-  inquiries    Inquiry[]
-  favorites    Favorite[]
+  images         ListingImage[]
+  amenities      ListingAmenity[]
+  availability   AvailabilityBlock[]
+  conversations  Conversation[]
+  favorites      Favorite[]
 
   @@index([status, city])
   @@index([ownerId])
@@ -150,23 +156,43 @@ model AvailabilityBlock {
   @@index([listingId, startDate, endDate])
 }
 
-model Inquiry {
-  id           String   @id @default(cuid())
-  listingId    String
-  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  renterName   String
-  renterEmail  String
-  renterPhone  String?
-  checkIn      DateTime? @db.Date
-  checkOut     DateTime? @db.Date
-  guestCount   Int?
-  message      String   @db.Text
-  read         Boolean  @default(false)
-  renterUserId String?
-  renterUser   User?    @relation("RenterInquiries", fields: [renterUserId], references: [id])
-  createdAt    DateTime @default(now())
+model Conversation {
+  id              String    @id @default(cuid())
+  listingId       String
+  listing         Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ownerId         String
+  owner           User      @relation("OwnerConversations", fields: [ownerId], references: [id], onDelete: Cascade)
+  renterName      String
+  renterEmail     String
+  renterPhone     String?
+  renterUserId    String?
+  renterUser      User?     @relation("RenterConversations", fields: [renterUserId], references: [id], onDelete: SetNull)
+  checkIn         DateTime? @db.Date
+  checkOut        DateTime? @db.Date
+  guestCount      Int?
+  /// Opaque token for Mailgun Reply-To: reply+{token}@mail.luxpads.co
+  mailThreadToken String    @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  messages        Message[]
 
+  @@unique([listingId, renterEmail])
+  @@index([ownerId])
+  @@index([renterUserId])
   @@index([listingId])
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderRole     MessageSender
+  body           String        @db.Text
+  createdAt      DateTime      @default(now())
+  readByOwnerAt  DateTime?
+  readByRenterAt DateTime?
+
+  @@index([conversationId, createdAt])
 }
 
 model AdminAction {
