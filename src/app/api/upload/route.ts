@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedImage } from "@/lib/storage";
+import { isAllowedListingImageMime, saveUploadedImage } from "@/lib/storage";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -24,8 +24,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Images only" }, { status: 400 });
+  if (!isAllowedListingImageMime(file.type)) {
+    return NextResponse.json(
+      { error: "Use a JPEG, PNG, WebP, or GIF image." },
+      { status: 400 },
+    );
   }
 
   const agg = await prisma.listingImage.aggregate({
