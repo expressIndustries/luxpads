@@ -39,13 +39,13 @@ export function ListingPublishControls({
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
-      <p className="text-sm font-medium text-stone-900">Publishing</p>
+      <p className="text-sm font-medium text-stone-900">Publish to the site</p>
       <p className="mt-1 text-xs text-stone-600">
         {status === ListingStatus.pending_review
           ? "Awaiting admin approval before going live."
           : status === ListingStatus.published
             ? "Live on the marketplace."
-            : "Drafts are private until you publish."}
+            : "Drafts stay saved. Guests only see your home here after you publish. Listing is free—nothing extra to activate first."}
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {status !== ListingStatus.published ? (

@@ -146,11 +146,15 @@ export default async function ListingDetailPage({ params }: Props) {
             </div>
             <div>
               <h2 className="font-serif text-2xl text-stone-900">Location</h2>
-              <p className="mt-2 text-sm text-stone-600">
-                {listing.addressLine1}, {listing.city}, {listing.state} {listing.postalCode}
-              </p>
               <div className="mt-4">
-                <MapPlaceholder lat={listing.latitude} lng={listing.longitude} />
+                <MapPlaceholder
+                  label="Approximate Location"
+                  lat={listing.latitude}
+                  lng={listing.longitude}
+                  locationQuery={`${listing.addressLine1}, ${listing.city}, ${listing.state} ${listing.postalCode}`}
+                  mapSalt={listing.slug}
+                  mapsSearchQuery={`${listing.city}, ${listing.state}`}
+                />
               </div>
             </div>
           </section>

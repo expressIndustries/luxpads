@@ -20,8 +20,8 @@ export default async function DashboardHomePage() {
       <div>
         <h1 className="font-serif text-3xl text-stone-900">Overview</h1>
         <p className="mt-2 text-sm text-stone-600">
-          Manage listings, calendars, and inquiries. Publishing is free—guests see homes once they are published (and
-          approved if your site uses admin review).
+          Manage listings, calendars, and inquiries. Guests only see a home after you publish it live (and after admin
+          approval, if your site uses review). No fees to list on the platform.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

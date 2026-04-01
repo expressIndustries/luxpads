@@ -5,7 +5,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-stone-200 bg-white">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="font-serif text-xl text-stone-900">{siteCopy.legalName}</p>
             <p className="mt-2 text-sm text-stone-600">
@@ -24,6 +24,9 @@ export function SiteFooter() {
             <Link href="/owners" className="block hover:text-stone-900">
               For owners
             </Link>
+            <Link href="/rent-home-for-sundance-film-festival-boulder" className="block hover:text-stone-900">
+              Sundance 2027 · Boulder
+            </Link>
           </div>
           <div className="space-y-2 text-sm text-stone-600">
             <p className="font-medium text-stone-900">Legal</p>
@@ -33,6 +36,15 @@ export function SiteFooter() {
             <Link href="/privacy" className="block hover:text-stone-900">
               Privacy
             </Link>
+          </div>
+          <div className="space-y-2 text-sm text-stone-600">
+            <p className="font-medium text-stone-900">Resources</p>
+            <a
+              href="/docs/2025%20Residential%20Lease%20Agreement%20-%20BLANK.docx"
+              className="block hover:text-stone-900"
+            >
+              Sample Lease
+            </a>
           </div>
         </div>
         <p className="mt-10 text-xs leading-relaxed text-stone-500">

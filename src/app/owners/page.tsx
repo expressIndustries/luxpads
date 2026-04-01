@@ -19,14 +19,14 @@ export default function OwnersPage() {
         <li>— Polished listing pages with gallery, amenities, and availability tools</li>
         <li>— Inquiries with guest context delivered to your inbox</li>
         <li>— You handle contracts, screening, deposits, and payment collection</li>
-        <li>— Publish when you are ready—no platform subscription</li>
+        <li>— Publish when you are ready—listing stays free</li>
       </ul>
       <div className="mt-10 flex flex-wrap gap-3">
         <Link
           href="/signup"
           className="inline-flex rounded-full bg-stone-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-stone-800"
         >
-          Create owner account
+          Create free account
         </Link>
       </div>
     </div>

@@ -16,7 +16,7 @@ User=luxpads
 Group=luxpads
 WorkingDirectory=/var/www/luxpads
 Environment=NODE_ENV=production
-# Loads DATABASE_URL, AUTH_SECRET, NEXT_PUBLIC_*, etc.
+# Loads DATABASE_URL, AUTH_SECRET, MAP_PROVIDER, GOOGLE_MAPS_API_KEY, NEXT_PUBLIC_*, etc.
 EnvironmentFile=/var/www/luxpads/.env
 ExecStart=/usr/bin/npm run start:prod
 Restart=on-failure

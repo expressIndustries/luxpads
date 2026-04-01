@@ -3,6 +3,10 @@
 # From this folder:
 #   docker compose up --build -d
 # Then open http://localhost:3000
+# phpMyAdmin: http://localhost:18080 (host port avoids common 8080 conflicts)
+#   • With `db` service: log in with user `luxpads` / `luxpads` (or root / `luxpads_root`); server is pre-filled as `db`.
+#   • If MySQL already runs on the host (e.g. port 23306), set in .env: PMA_HOST=host.docker.internal  PMA_PORT=23306
+#     then: docker compose up -d phpmyadmin   (UI: http://localhost:18080)
 #
 # First-time demo data (optional):
 #   docker compose exec app npx prisma db seed
@@ -42,11 +46,27 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:-docker-dev-change-me-use-openssl-rand-base64-32}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-LuxPads}
+      # Maps (listing Location) — read at runtime; set in .env next to compose (no rebuild). NEXT_PUBLIC_* alone is empty if image was built without them.
+      MAP_PROVIDER: ${MAP_PROVIDER:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN:-}
       NODE_ENV: production
       REQUIRE_LISTING_APPROVAL: ${REQUIRE_LISTING_APPROVAL:-true}
     depends_on:
       db:
         condition: service_healthy
+
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    restart: unless-stopped
+    ports:
+      - "${PHPMYADMIN_PORT:-18080}:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PMA_HOST: ${PMA_HOST:-db}
+      PMA_PORT: ${PMA_PORT:-3306}
+    # No depends_on: db — allows `docker compose up -d phpmyadmin` when MySQL runs on the host (set PMA_HOST/PMA_PORT in .env).
 
 volumes:
   luxpads_mysql:

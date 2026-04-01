@@ -51,10 +51,9 @@ export function SignupForm() {
         <Input id="password" name="password" type="password" minLength={8} required autoComplete="new-password" />
         <p className="text-xs text-stone-500">At least 8 characters.</p>
       </div>
-      <label className="flex items-start gap-3 text-sm text-stone-700">
-        <input type="checkbox" name="listHomes" className="mt-1 rounded border-stone-300" />
-        <span>I’m a homeowner and want to publish listings.</span>
-      </label>
+      <p className="text-xs text-stone-600">
+        Signing up is free. You can browse, inquire, and publish listings as soon as your account is created.
+      </p>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Creating…" : "Create account"}
