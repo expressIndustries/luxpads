@@ -95,7 +95,7 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
       ownerEmail,
       listingTitle: listing.title,
       guestDisplayName: parsed.data.renterName,
-      messagePreview: messageBody.slice(0, 400),
+      messageBody,
       conversationId: existing.id,
       mailThreadToken: existing.mailThreadToken,
     });
@@ -125,7 +125,7 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
       ownerEmail,
       listingTitle: listing.title,
       guestDisplayName: parsed.data.renterName,
-      messagePreview: messageBody.slice(0, 400),
+      messageBody,
       conversationId: conv.id,
       mailThreadToken: conv.mailThreadToken,
     });

@@ -57,8 +57,12 @@ export async function POST(req: Request) {
   let nextOrder = (agg._max.sortOrder ?? -1) + 1;
 
   const images: { id: string; url: string }[] = [];
+  let storedOnLocalDisk = false;
   for (const file of files) {
     const stored = await saveUploadedImage(file, "listings");
+    if (!stored.url.startsWith("http")) {
+      storedOnLocalDisk = true;
+    }
     const row = await prisma.listingImage.create({
       data: {
         listingId,
@@ -69,6 +73,12 @@ export async function POST(req: Request) {
     });
     nextOrder += 1;
     images.push({ id: row.id, url: row.url });
+  }
+
+  if (storedOnLocalDisk && process.env.NODE_ENV === "production") {
+    console.warn(
+      "[upload] Image(s) written to local disk; S3 is off. Set AWS_BUCKET + AWS_DEFAULT_REGION (+ keys or IAM role). See .env.example.",
+    );
   }
 
   return NextResponse.json({ images });

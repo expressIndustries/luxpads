@@ -58,7 +58,7 @@ export async function sendOwnerReply(_prev: MessageActionState, formData: FormDa
     renterEmail: conv.renterEmail,
     listingTitle: conv.listing.title,
     ownerDisplayName,
-    messagePreview: parsed.data.body.slice(0, 400),
+    messageBody: parsed.data.body.trim(),
     conversationId: conv.id,
     mailThreadToken: conv.mailThreadToken,
   });
@@ -113,7 +113,7 @@ export async function sendRenterReply(_prev: MessageActionState, formData: FormD
     ownerEmail,
     listingTitle: conv.listing.title,
     guestDisplayName: conv.renterName,
-    messagePreview: parsed.data.body.slice(0, 400),
+    messageBody: parsed.data.body.trim(),
     conversationId: conv.id,
     mailThreadToken: conv.mailThreadToken,
   });

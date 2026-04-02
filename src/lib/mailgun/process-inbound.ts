@@ -124,7 +124,7 @@ export async function processMailgunInbound(form: FormData): Promise<InboundResu
       ownerEmail: ownerNotifyEmail,
       listingTitle: conv.listing.title,
       guestDisplayName: conv.renterName,
-      messagePreview: body.slice(0, 400),
+      messageBody: body,
       conversationId: conv.id,
       mailThreadToken: conv.mailThreadToken,
     });
@@ -133,7 +133,7 @@ export async function processMailgunInbound(form: FormData): Promise<InboundResu
       renterEmail: conv.renterEmail,
       listingTitle: conv.listing.title,
       ownerDisplayName: displayOwnerName,
-      messagePreview: body.slice(0, 400),
+      messageBody: body,
       conversationId: conv.id,
       mailThreadToken: conv.mailThreadToken,
     });

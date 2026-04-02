@@ -54,11 +54,29 @@ function threadReplyTo(mailThreadToken: string): string {
   return replyToAddress(mailThreadToken, domain);
 }
 
+const MESSAGE_BANNER_START = "-=-=-=-=-=-=-=Message=-=-=-=-=-=-=-";
+const MESSAGE_BANNER_END = "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=";
+
+/** Keeps email size reasonable; very long bodies are still complete in the app. */
+const MAX_MESSAGE_CHARS_IN_EMAIL = 10_000;
+
+function clipMessageForEmail(body: string): string {
+  const t = body.trim();
+  if (t.length <= MAX_MESSAGE_CHARS_IN_EMAIL) return t;
+  return `${t.slice(0, MAX_MESSAGE_CHARS_IN_EMAIL)}\n\n… (truncated for email — open the thread for the full message.)`;
+}
+
+/** Plain-text block so the guest/owner’s words are visually separate from boilerplate. */
+function delimitedMessageBlock(messageBody: string): string {
+  const inner = clipMessageForEmail(messageBody);
+  return `${MESSAGE_BANNER_START}\n\n${inner}\n\n${MESSAGE_BANNER_END}`;
+}
+
 export async function notifyOwnerOfNewConversation(params: {
   ownerEmail: string;
   listingTitle: string;
   guestDisplayName: string;
-  messagePreview: string;
+  messageBody: string;
   conversationId: string;
   mailThreadToken: string;
 }) {
@@ -72,11 +90,11 @@ export async function notifyOwnerOfNewConversation(params: {
       `${params.guestDisplayName} sent a message about “${params.listingTitle}” on LuxPads.`,
       "Their email address is not shown here—replies go through LuxPads.",
       "",
-      params.messagePreview,
+      delimitedMessageBlock(params.messageBody),
       "",
-      `Open in your dashboard: ${link}`,
+      `Open thread: ${link}`,
       "",
-      "Or reply to this email; your response is delivered through LuxPads.",
+      "Or reply to this email to respond through LuxPads.",
     ].join("\n"),
   });
 }
@@ -85,7 +103,7 @@ export async function notifyOwnerOfRenterMessage(params: {
   ownerEmail: string;
   listingTitle: string;
   guestDisplayName: string;
-  messagePreview: string;
+  messageBody: string;
   conversationId: string;
   mailThreadToken: string;
 }) {
@@ -98,7 +116,7 @@ export async function notifyOwnerOfRenterMessage(params: {
     text: [
       `${params.guestDisplayName} sent another message about “${params.listingTitle}”.`,
       "",
-      params.messagePreview,
+      delimitedMessageBlock(params.messageBody),
       "",
       `Open thread: ${link}`,
       "",
@@ -111,7 +129,7 @@ export async function notifyRenterOfOwnerMessage(params: {
   renterEmail: string;
   listingTitle: string;
   ownerDisplayName: string;
-  messagePreview: string;
+  messageBody: string;
   conversationId: string;
   mailThreadToken: string;
 }) {
@@ -125,9 +143,11 @@ export async function notifyRenterOfOwnerMessage(params: {
       `${params.ownerDisplayName} sent a message about “${params.listingTitle}” on LuxPads.`,
       "Reply to this email to respond—the homeowner does not see your personal address in the LuxPads app.",
       "",
-      params.messagePreview,
+      delimitedMessageBlock(params.messageBody),
       "",
-      `View online: ${link}`,
+      `Open thread: ${link}`,
+      "",
+      "Or reply to this email to respond through LuxPads.",
       "",
       "Sign in with the same email you used for your inquiry if you open the link above.",
     ].join("\n"),

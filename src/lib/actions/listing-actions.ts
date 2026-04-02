@@ -267,8 +267,19 @@ export async function reorderListingImages(listingId: string, orderedIds: string
   const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
   const listing = await prisma.listing.findFirst({
     where: isAdmin ? { id: listingId } : { id: listingId, ownerId },
+    select: { id: true, slug: true },
   });
   if (!listing) throw new Error("Not found");
+
+  const existing = await prisma.listingImage.findMany({
+    where: { listingId },
+    select: { id: true },
+  });
+  const allowed = new Set(existing.map((r) => r.id));
+  if (orderedIds.length !== allowed.size || !orderedIds.every((id) => allowed.has(id))) {
+    throw new Error("Invalid image order");
+  }
+
   await prisma.$transaction(
     orderedIds.map((id, index) =>
       prisma.listingImage.updateMany({
@@ -279,6 +290,11 @@ export async function reorderListingImages(listingId: string, orderedIds: string
   );
   revalidatePath(`/dashboard/listings/${listingId}/edit`);
   revalidatePath(`/admin/listings/${listingId}/edit`);
+  revalidatePath(`/listing/${listing.slug}`);
+  revalidatePath("/search");
+  revalidatePath("/");
+  revalidatePath("/dashboard/listings");
+  revalidatePath("/admin");
 }
 
 /** Move image to sortOrder 0 — used as hero on listing page and cards. */
