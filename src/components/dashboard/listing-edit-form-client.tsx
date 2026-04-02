@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { updateListing, type ListingSaveState } from "@/lib/actions/listing-actions";
 import { PROPERTY_TYPES } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
@@ -38,6 +40,10 @@ export type ListingEditDefaults = {
 
 export type AmenityOption = { id: string; slug: string; label: string };
 
+function cloneDefaults(d: ListingEditDefaults): ListingEditDefaults {
+  return { ...d };
+}
+
 function SaveButton() {
   const { pending } = useFormStatus();
   return (
@@ -49,41 +55,86 @@ function SaveButton() {
 
 type Props = {
   defaults: ListingEditDefaults;
+  /** Changes after each successful save so we re-sync from the server (React 19 resets forms after actions). */
+  listingUpdatedAt: string;
   selectedAmenitySlugs: string[];
   allAmenities: AmenityOption[];
 };
 
-export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmenities }: Props) {
+export function ListingEditFormClient({
+  defaults,
+  listingUpdatedAt,
+  selectedAmenitySlugs,
+  allAmenities,
+}: Props) {
+  const router = useRouter();
   const [state, formAction] = useFormState(updateListing, initialSave);
-  const selected = new Set(selectedAmenitySlugs);
+  const [values, setValues] = useState(() => cloneDefaults(defaults));
+  const [amenitySlugs, setAmenitySlugs] = useState(() => new Set(selectedAmenitySlugs));
+
+  useEffect(() => {
+    setValues(cloneDefaults(defaults));
+    setAmenitySlugs(new Set(selectedAmenitySlugs));
+    // Only listingUpdatedAt — not `defaults` (new object every RSC render would wipe edits while typing).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listingUpdatedAt]);
+
+  useEffect(() => {
+    if (state.ok) {
+      router.refresh();
+    }
+  }, [state.ok, router]);
+
+  function patch<K extends keyof ListingEditDefaults>(key: K, value: ListingEditDefaults[K]) {
+    setValues((v) => ({ ...v, [key]: value }));
+  }
 
   return (
     <form action={formAction} className="space-y-6">
-      <input type="hidden" name="id" value={defaults.id} />
+      <input type="hidden" name="id" value={values.id} />
       <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
         <h2 className="font-serif text-xl text-stone-900">Basics</h2>
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" name="title" required defaultValue={defaults.title} />
+          <Input
+            id="title"
+            name="title"
+            required
+            value={values.title}
+            onChange={(e) => patch("title", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="summary">Summary</Label>
-          <Textarea id="summary" name="summary" required defaultValue={defaults.summary} />
+          <Textarea
+            id="summary"
+            name="summary"
+            required
+            value={values.summary}
+            onChange={(e) => patch("summary", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea id="description" name="description" required defaultValue={defaults.description} />
+          <Textarea
+            id="description"
+            name="description"
+            required
+            value={values.description}
+            onChange={(e) => patch("description", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="propertyType">Property type</Label>
           <select
             id="propertyType"
             name="propertyType"
-            defaultValue={defaults.propertyType}
+            value={values.propertyType}
+            onChange={(e) => patch("propertyType", e.target.value)}
             className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
           >
-            {!PROPERTY_TYPES.includes(defaults.propertyType as (typeof PROPERTY_TYPES)[number]) ? (
-              <option value={defaults.propertyType}>{defaults.propertyType}</option>
+            {!PROPERTY_TYPES.includes(values.propertyType as (typeof PROPERTY_TYPES)[number]) ? (
+              <option value={values.propertyType}>{values.propertyType}</option>
             ) : null}
             {PROPERTY_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -98,36 +149,70 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
         <h2 className="font-serif text-xl text-stone-900">Location</h2>
         <div className="space-y-2">
           <Label htmlFor="addressLine1">Address</Label>
-          <Input id="addressLine1" name="addressLine1" required defaultValue={defaults.addressLine1} />
+          <Input
+            id="addressLine1"
+            name="addressLine1"
+            required
+            value={values.addressLine1}
+            onChange={(e) => patch("addressLine1", e.target.value)}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
-            <Input id="city" name="city" required defaultValue={defaults.city} />
+            <Input id="city" name="city" required value={values.city} onChange={(e) => patch("city", e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="state">State / region</Label>
-            <Input id="state" name="state" required defaultValue={defaults.state} />
+            <Input
+              id="state"
+              name="state"
+              required
+              value={values.state}
+              onChange={(e) => patch("state", e.target.value)}
+            />
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="country">Country</Label>
-            <Input id="country" name="country" required defaultValue={defaults.country} />
+            <Input
+              id="country"
+              name="country"
+              required
+              value={values.country}
+              onChange={(e) => patch("country", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="postalCode">Postal code</Label>
-            <Input id="postalCode" name="postalCode" required defaultValue={defaults.postalCode} />
+            <Input
+              id="postalCode"
+              name="postalCode"
+              required
+              value={values.postalCode}
+              onChange={(e) => patch("postalCode", e.target.value)}
+            />
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="latitude">Latitude (optional)</Label>
-            <Input id="latitude" name="latitude" defaultValue={defaults.latitude} />
+            <Input
+              id="latitude"
+              name="latitude"
+              value={values.latitude}
+              onChange={(e) => patch("latitude", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="longitude">Longitude (optional)</Label>
-            <Input id="longitude" name="longitude" defaultValue={defaults.longitude} />
+            <Input
+              id="longitude"
+              name="longitude"
+              value={values.longitude}
+              onChange={(e) => patch("longitude", e.target.value)}
+            />
           </div>
         </div>
       </section>
@@ -137,11 +222,25 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="maxGuests">Max guests</Label>
-            <Input id="maxGuests" name="maxGuests" type="number" required defaultValue={defaults.maxGuests} />
+            <Input
+              id="maxGuests"
+              name="maxGuests"
+              type="number"
+              required
+              value={values.maxGuests}
+              onChange={(e) => patch("maxGuests", Number.parseInt(e.target.value, 10) || 0)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="bedrooms">Bedrooms</Label>
-            <Input id="bedrooms" name="bedrooms" type="number" required defaultValue={defaults.bedrooms} />
+            <Input
+              id="bedrooms"
+              name="bedrooms"
+              type="number"
+              required
+              value={values.bedrooms}
+              onChange={(e) => patch("bedrooms", Number.parseInt(e.target.value, 10) || 0)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="bathrooms">Bathrooms</Label>
@@ -151,12 +250,20 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
               type="number"
               step="0.5"
               required
-              defaultValue={defaults.bathrooms}
+              value={values.bathrooms}
+              onChange={(e) => patch("bathrooms", Number.parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="beds">Beds</Label>
-            <Input id="beds" name="beds" type="number" required defaultValue={defaults.beds} />
+            <Input
+              id="beds"
+              name="beds"
+              type="number"
+              required
+              value={values.beds}
+              onChange={(e) => patch("beds", Number.parseInt(e.target.value, 10) || 0)}
+            />
           </div>
         </div>
         <div className="space-y-2">
@@ -164,7 +271,8 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
           <Textarea
             id="sleepingArrangements"
             name="sleepingArrangements"
-            defaultValue={defaults.sleepingArrangements}
+            value={values.sleepingArrangements}
+            onChange={(e) => patch("sleepingArrangements", e.target.value)}
           />
         </div>
       </section>
@@ -173,15 +281,30 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
         <h2 className="font-serif text-xl text-stone-900">Policies & rates</h2>
         <div className="space-y-2">
           <Label htmlFor="houseRules">House rules</Label>
-          <Textarea id="houseRules" name="houseRules" defaultValue={defaults.houseRules} />
+          <Textarea
+            id="houseRules"
+            name="houseRules"
+            value={values.houseRules}
+            onChange={(e) => patch("houseRules", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="checkInOut">Check-in / check-out</Label>
-          <Textarea id="checkInOut" name="checkInOut" defaultValue={defaults.checkInOut} />
+          <Textarea
+            id="checkInOut"
+            name="checkInOut"
+            value={values.checkInOut}
+            onChange={(e) => patch("checkInOut", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="cancellationPolicy">Cancellation policy</Label>
-          <Textarea id="cancellationPolicy" name="cancellationPolicy" defaultValue={defaults.cancellationPolicy} />
+          <Textarea
+            id="cancellationPolicy"
+            name="cancellationPolicy"
+            value={values.cancellationPolicy}
+            onChange={(e) => patch("cancellationPolicy", e.target.value)}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -192,17 +315,30 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
               type="number"
               step="1"
               required
-              defaultValue={defaults.nightlyRateDollars}
+              value={values.nightlyRateDollars}
+              onChange={(e) => patch("nightlyRateDollars", Number.parseInt(e.target.value, 10) || 0)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="minNights">Minimum nights</Label>
-            <Input id="minNights" name="minNights" type="number" required defaultValue={defaults.minNights} />
+            <Input
+              id="minNights"
+              name="minNights"
+              type="number"
+              required
+              value={values.minNights}
+              onChange={(e) => patch("minNights", Number.parseInt(e.target.value, 10) || 0)}
+            />
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="cleaningFeeNote">Cleaning fee note (display only)</Label>
-          <Textarea id="cleaningFeeNote" name="cleaningFeeNote" defaultValue={defaults.cleaningFeeNote} />
+          <Textarea
+            id="cleaningFeeNote"
+            name="cleaningFeeNote"
+            value={values.cleaningFeeNote}
+            onChange={(e) => patch("cleaningFeeNote", e.target.value)}
+          />
         </div>
       </section>
 
@@ -215,7 +351,15 @@ export function ListingEditFormClient({ defaults, selectedAmenitySlugs, allAmeni
                 type="checkbox"
                 name="amenitySlugs"
                 value={a.slug}
-                defaultChecked={selected.has(a.slug)}
+                checked={amenitySlugs.has(a.slug)}
+                onChange={() => {
+                  setAmenitySlugs((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(a.slug)) next.delete(a.slug);
+                    else next.add(a.slug);
+                    return next;
+                  });
+                }}
                 className="rounded border-stone-300"
               />
               {a.label}

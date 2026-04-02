@@ -53,6 +53,7 @@ export async function ListingEditForm({ listing }: { listing: ListingWith }) {
       />
 
       <ListingEditFormClient
+        listingUpdatedAt={listing.updatedAt.toISOString()}
         defaults={buildDefaults(listing)}
         selectedAmenitySlugs={selectedAmenitySlugs}
         allAmenities={allAmenities.map((a) => ({ id: a.id, slug: a.slug, label: a.label }))}
