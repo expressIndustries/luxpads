@@ -8,14 +8,20 @@ import { siteCopy } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, destinations] = await Promise.all([
-    getFeaturedListings(6),
-    prisma.featuredDestination.findMany({
-      where: { active: true },
-      orderBy: { sortOrder: "asc" },
-      take: 8,
-    }),
-  ]);
+  let featured: Awaited<ReturnType<typeof getFeaturedListings>> = [];
+  let destinations: Awaited<ReturnType<typeof prisma.featuredDestination.findMany>> = [];
+  try {
+    [featured, destinations] = await Promise.all([
+      getFeaturedListings(6),
+      prisma.featuredDestination.findMany({
+        where: { active: true },
+        orderBy: { sortOrder: "asc" },
+        take: 8,
+      }),
+    ]);
+  } catch {
+    /* MySQL down, bad DATABASE_URL, or migrations not applied — still render the marketing shell */
+  }
 
   return (
     <div>
@@ -96,23 +102,40 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((l) => (
-            <ListingCard
-              key={l.id}
-              listing={{
-                slug: l.slug,
-                title: l.title,
-                city: l.city,
-                state: l.state,
-                maxGuests: l.maxGuests,
-                bedrooms: l.bedrooms,
-                bathrooms: l.bathrooms,
-                nightlyRateCents: l.nightlyRateCents,
-                heroImage: l.images[0]?.url ?? null,
-                featured: l.featured,
-              }}
-            />
-          ))}
+          {featured.length === 0 ? (
+            <p className="col-span-full text-sm text-stone-600">
+              No listings to show yet.{" "}
+              <Link href="/search" className="font-medium text-amber-900 underline underline-offset-2">
+                Browse all homes
+              </Link>
+              {process.env.NODE_ENV === "development" ? (
+                <span className="mt-2 block text-xs text-stone-500">
+                  Local tip: start MySQL, set <code className="rounded bg-stone-100 px-1">DATABASE_URL</code> in{" "}
+                  <code className="rounded bg-stone-100 px-1">.env</code>, then{" "}
+                  <code className="rounded bg-stone-100 px-1">npx prisma migrate dev</code> and optional{" "}
+                  <code className="rounded bg-stone-100 px-1">npm run db:seed</code>.
+                </span>
+              ) : null}
+            </p>
+          ) : (
+            featured.map((l) => (
+              <ListingCard
+                key={l.id}
+                listing={{
+                  slug: l.slug,
+                  title: l.title,
+                  city: l.city,
+                  state: l.state,
+                  maxGuests: l.maxGuests,
+                  bedrooms: l.bedrooms,
+                  bathrooms: l.bathrooms,
+                  nightlyRateCents: l.nightlyRateCents,
+                  heroImage: l.images[0]?.url ?? null,
+                  featured: l.featured,
+                }}
+              />
+            ))
+          )}
         </div>
       </section>
 
@@ -123,6 +146,11 @@ export default async function HomePage() {
             From Rocky Mountain peaks to Pacific sunsets—start your search in a curated corridor.
           </p>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {destinations.length === 0 ? (
+              <p className="col-span-full text-sm text-stone-600">
+                Destination picks will appear here once configured.
+              </p>
+            ) : null}
             {destinations.map((d) => (
               <Link
                 key={d.id}

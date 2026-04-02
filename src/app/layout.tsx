@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { AppProviders } from "@/components/providers/app-providers";
 import { siteCopy } from "@/lib/constants";
+import { getMetadataBase } from "@/lib/metadata-base";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -20,7 +21,7 @@ const sans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: getMetadataBase(),
   title: {
     default: siteCopy.legalName,
     template: `%s | ${siteCopy.domainDisplay}`,
