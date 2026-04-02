@@ -14,7 +14,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 # Generate client; build does not need a live database
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && sh scripts/sync-standalone-assets.sh
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -26,9 +26,8 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 # Prisma CLI + tsx for `prisma db seed` in the container
 RUN npm install -g prisma@5.22.0 tsx
 
-COPY --from=builder /app/public ./public
+# Standalone bundle after sync-standalone-assets.sh includes public/ and .next/static
 COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
 

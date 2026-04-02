@@ -110,12 +110,15 @@ do_lamp_install() {
   npx prisma migrate deploy
   echo "Building Next.js..."
   npm run build
+  echo "Syncing public + .next/static into .next/standalone (required for output: standalone)..."
+  sh "$ROOT/scripts/sync-standalone-assets.sh"
   mkdir -p public/uploads
   echo ""
   echo "Build finished. Next steps:"
   echo "  • Put Apache in front: see deploy/apache-luxpads.conf.example (enable proxy modules)."
   echo "  • Run the app: ./deploy.sh start   or install deploy/luxpads.service.example as systemd."
   echo "  • Ensure public/uploads is writable by the user that runs Node."
+  echo "  • Sundance page art lives in src/assets/sundance (bundled into .next/static); not public/images/sundance."
 }
 
 do_start() {
