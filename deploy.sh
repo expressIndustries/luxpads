@@ -113,6 +113,9 @@ do_lamp_install() {
   echo "Syncing public + .next/static into .next/standalone (required for output: standalone)..."
   sh "$ROOT/scripts/sync-standalone-assets.sh"
   mkdir -p public/uploads
+  # Symlink standalone public/uploads -> real public/uploads so new uploads are served immediately
+  rm -rf .next/standalone/public/uploads
+  ln -s "$ROOT/public/uploads" .next/standalone/public/uploads
   echo ""
   echo "Build finished. Next steps:"
   echo "  • Put Apache in front: see deploy/apache-luxpads.conf.example (enable proxy modules)."
