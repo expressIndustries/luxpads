@@ -67,8 +67,10 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
         <p className="text-sm font-medium text-stone-900">Photos</p>
         <p className="text-xs text-stone-500">
           The first photo is the cover (hero on the listing and in search). Click any other photo to make it the cover.
-          You can select several images at once. JPEG, PNG, WebP, or GIF. Stored under /public/uploads in dev; swap to
-          S3/Cloudinary later.
+          You can select several images at once. JPEG, PNG, WebP, or GIF. When{" "}
+          <code className="rounded bg-stone-100 px-1 py-0.5 text-[11px]">AWS_BUCKET</code> and region are set, new
+          uploads go to S3 under <code className="rounded bg-stone-100 px-1 py-0.5 text-[11px]">listing-images/</code>;
+          otherwise files stay under <code className="rounded bg-stone-100 px-1 py-0.5 text-[11px]">/uploads</code>.
         </p>
         <label className="mt-3 inline-flex cursor-pointer rounded-full border border-stone-200 bg-white px-4 py-2 text-sm hover:border-stone-300">
           <input

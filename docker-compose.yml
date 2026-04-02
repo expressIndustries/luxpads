@@ -37,12 +37,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        AWS_BUCKET: ${AWS_BUCKET:-}
+        AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-}
+        AWS_REGION: ${AWS_REGION:-}
+        AWS_S3_PUBLIC_BASE_URL: ${AWS_S3_PUBLIC_BASE_URL:-}
+        NEXT_IMAGE_S3_HOSTS: ${NEXT_IMAGE_S3_HOSTS:-}
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      # Override in .env when using a host-managed or external MySQL instead of the db service.
-      DATABASE_URL: ${DATABASE_URL:-mysql://luxpads:luxpads@db:3306/luxpads}
+      # Inside Docker, MySQL is the `db` service — not localhost:23306 (that URL is for host-only tools).
+      # Override with DOCKER_DATABASE_URL in .env if the app must use another server from the container.
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-mysql://luxpads:luxpads@db:3306/luxpads}
       AUTH_SECRET: ${AUTH_SECRET:-docker-dev-change-me-use-openssl-rand-base64-32}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-LuxPads}
@@ -52,6 +59,16 @@ services:
       MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN:-}
       NODE_ENV: production
       REQUIRE_LISTING_APPROVAL: ${REQUIRE_LISTING_APPROVAL:-true}
+      # S3 listing images (optional — same vars as .env; keys are runtime-only, not build args).
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-}
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_BUCKET: ${AWS_BUCKET:-}
+      AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT:-false}
+      AWS_S3_LISTING_PREFIX: ${AWS_S3_LISTING_PREFIX:-listing-images}
+      AWS_S3_PUBLIC_BASE_URL: ${AWS_S3_PUBLIC_BASE_URL:-}
+      NEXT_IMAGE_S3_HOSTS: ${NEXT_IMAGE_S3_HOSTS:-}
       # Optional: set to same path if you mount a volume (see volumes below).
       # LUXPADS_UPLOADS_ROOT: /data/luxpads-uploads
     volumes:

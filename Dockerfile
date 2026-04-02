@@ -12,6 +12,18 @@ RUN apk add --no-cache libc6-compat openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Optional: pass at image build so next.config can add S3/CDN hostnames to `images.remotePatterns`.
+# Runtime env alone does not change an already-built Next.js image.
+ARG AWS_BUCKET=
+ARG AWS_DEFAULT_REGION=
+ARG AWS_REGION=
+ARG AWS_S3_PUBLIC_BASE_URL=
+ARG NEXT_IMAGE_S3_HOSTS=
+ENV AWS_BUCKET=$AWS_BUCKET
+ENV AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+ENV AWS_REGION=$AWS_REGION
+ENV AWS_S3_PUBLIC_BASE_URL=$AWS_S3_PUBLIC_BASE_URL
+ENV NEXT_IMAGE_S3_HOSTS=$NEXT_IMAGE_S3_HOSTS
 # Generate client; build does not need a live database
 RUN npx prisma generate
 RUN npm run build && sh scripts/sync-standalone-assets.sh

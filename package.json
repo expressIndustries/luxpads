@@ -9,9 +9,8 @@
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
     "build": "prisma generate && next build",
     "start": "next start",
-    "start:prod": "sh scripts/start-standalone-local.sh",
-    "build:start": "npm run build && npm run start:prod",
     "start:prod": "next start -H 127.0.0.1 -p 3000",
+    "build:start": "npm run build && npm run start:prod",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
@@ -25,6 +24,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1022.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

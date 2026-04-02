@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ListingStatus, type Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { deleteStoredListingImage } from "@/lib/storage";
 import { uniqueSlug } from "@/lib/slug";
 
 async function requireOwner() {
@@ -257,6 +258,7 @@ export async function deleteListingImage(imageId: string, listingId: string) {
   });
   if (!img) throw new Error("Not found");
   await prisma.listingImage.delete({ where: { id: imageId } });
+  await deleteStoredListingImage(img.url);
   revalidatePath(`/dashboard/listings/${listingId}/edit`);
   revalidatePath(`/admin/listings/${listingId}/edit`);
 }

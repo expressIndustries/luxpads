@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* ~25% larger root text (Tailwind rem utilities scale with this). */
+html {
+  font-size: 125%;
+}
+
 :root {
   --background: #faf9f7;
   --foreground: #1c1917;

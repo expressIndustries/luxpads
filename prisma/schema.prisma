@@ -118,7 +118,7 @@ model ListingImage {
   id        String   @id @default(cuid())
   listingId String
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  url       String
+  url       String   @db.Text
   sortOrder Int      @default(0)
   alt       String?
   createdAt DateTime @default(now())

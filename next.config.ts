@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { nextImageRemoteHostnames } from "./src/lib/s3-env";
+
+const s3ImageHosts = nextImageRemoteHostnames();
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -12,6 +15,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
       { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
+      ...s3ImageHosts.map((hostname) => ({
+        protocol: "https" as const,
+        hostname,
+        pathname: "/**" as const,
+      })),
     ],
   },
 };

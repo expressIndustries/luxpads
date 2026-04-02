@@ -18,7 +18,7 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex flex-col leading-tight">
           <span className="font-serif text-lg tracking-tight text-stone-900">{siteCopy.legalName}</span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-stone-500">
+          <span className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
             {siteCopy.tagline}
           </span>
         </Link>

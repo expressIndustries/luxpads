@@ -8,7 +8,7 @@ import {
   ListingGalleryLightboxProvider,
   ListingHeroLightboxTrigger,
 } from "@/components/listing/listing-gallery-lightbox";
-import { MapPlaceholder } from "@/components/listing/map-placeholder";
+import { ListingMap } from "@/components/listing/listing-map";
 import { AvailabilityPreview } from "@/components/listing/availability-preview";
 import { InquiryForm } from "@/components/listing/inquiry-form";
 import { siteCopy } from "@/lib/constants";
@@ -72,13 +72,18 @@ export default async function ListingDetailPage({ params }: Props) {
         <div className="relative aspect-[21/9] min-h-[320px] w-full overflow-hidden bg-stone-100">
           <Image src={hero} alt="" fill priority unoptimized className="object-cover" sizes="100vw" />
           <ListingHeroLightboxTrigger />
-          <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-stone-950/50 to-transparent" />
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[3] mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-stone-950/55 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 z-[3] flex items-end justify-center px-4 pb-10 sm:px-6 lg:px-8">
+            <p className="text-center text-base font-semibold uppercase tracking-[0.28em] text-white sm:text-lg md:text-xl">
               {listing.city}, {listing.state}
             </p>
-            <h1 className="mt-3 max-w-4xl font-serif text-4xl text-white sm:text-5xl">{listing.title}</h1>
-            <p className="mt-4 max-w-2xl text-sm text-white/90">{listing.summary}</p>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-6xl border-b border-stone-100 px-4 pb-10 pt-10 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
+            <h1 className="font-serif text-3xl leading-tight text-stone-900 sm:text-4xl lg:text-5xl">{listing.title}</h1>
+            <p className="text-stone-700 leading-relaxed lg:pt-1">{listing.summary}</p>
           </div>
         </div>
 
@@ -146,7 +151,7 @@ export default async function ListingDetailPage({ params }: Props) {
             <div>
               <h2 className="font-serif text-2xl text-stone-900">Location</h2>
               <div className="mt-4">
-                <MapPlaceholder
+                <ListingMap
                   label="Approximate Location"
                   lat={listing.latitude}
                   lng={listing.longitude}

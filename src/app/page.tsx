@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { getFeaturedListings } from "@/lib/queries/search-listings";
 import { ListingCard } from "@/components/listing/listing-card";
 import { siteCopy } from "@/lib/constants";
@@ -9,16 +8,8 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let featured: Awaited<ReturnType<typeof getFeaturedListings>> = [];
-  let destinations: Awaited<ReturnType<typeof prisma.featuredDestination.findMany>> = [];
   try {
-    [featured, destinations] = await Promise.all([
-      getFeaturedListings(6),
-      prisma.featuredDestination.findMany({
-        where: { active: true },
-        orderBy: { sortOrder: "asc" },
-        take: 8,
-      }),
-    ]);
+    featured = await getFeaturedListings(6);
   } catch {
     /* MySQL down, bad DATABASE_URL, or migrations not applied — still render the marketing shell */
   }
@@ -41,8 +32,10 @@ export default async function HomePage() {
           <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
             {siteCopy.legalName}
           </h1>
-          <p className="mt-4 max-w-xl text-lg text-stone-200/95">{siteCopy.tagline}</p>
-          <p className="mt-2 max-w-xl text-sm text-stone-300/90">
+          <p className="mt-4 max-w-2xl text-2xl font-medium leading-snug text-stone-100 sm:text-3xl">
+            {siteCopy.tagline}
+          </p>
+          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-stone-200/95 sm:text-xl">
             No traveler booking fees. Owners list for free; you arrange stays directly with the homeowner.
           </p>
           <form
@@ -54,7 +47,7 @@ export default async function HomePage() {
               <label className="text-[10px] font-semibold uppercase tracking-widest text-stone-200">Where</label>
               <input
                 name="city"
-                placeholder="Aspen, Malibu, Napa…"
+                placeholder="Boulder, CO"
                 className="w-full rounded-xl border border-white/20 bg-white/95 px-4 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/40"
               />
             </div>
@@ -136,47 +129,6 @@ export default async function HomePage() {
               />
             ))
           )}
-        </div>
-      </section>
-
-      <section className="border-y border-stone-200 bg-white/60 py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-3xl text-stone-900">Signature destinations</h2>
-          <p className="mt-2 max-w-2xl text-sm text-stone-600">
-            From Rocky Mountain peaks to Pacific sunsets—start your search in a curated corridor.
-          </p>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {destinations.length === 0 ? (
-              <p className="col-span-full text-sm text-stone-600">
-                Destination picks will appear here once configured.
-              </p>
-            ) : null}
-            {destinations.map((d) => (
-              <Link
-                key={d.id}
-                href={`/search?city=${encodeURIComponent(d.name)}`}
-                className="group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
-              >
-                <div className="relative aspect-[4/3]">
-                  {d.imageUrl ? (
-                    <Image
-                      src={d.imageUrl}
-                      alt=""
-                      fill
-                      unoptimized
-                      className="object-cover transition group-hover:scale-[1.02]"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-stone-200" />
-                  )}
-                </div>
-                <div className="p-4">
-                  <p className="font-serif text-lg text-stone-900">{d.name}</p>
-                  {d.subtitle ? <p className="mt-1 text-xs text-stone-500">{d.subtitle}</p> : null}
-                </div>
-              </Link>
-            ))}
-          </div>
         </div>
       </section>
 
