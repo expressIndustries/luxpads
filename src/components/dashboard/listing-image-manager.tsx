@@ -17,13 +17,16 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
   const sorted = [...images].sort((a, b) => a.sortOrder - b.sortOrder);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const list = e.target.files;
+    if (!list?.length) return;
+    const files = Array.from(list);
     setUploading(true);
     setError(null);
     const fd = new FormData();
-    fd.append("file", file);
     fd.append("listingId", listingId);
+    for (const file of files) {
+      fd.append("file", file);
+    }
     const res = await fetch("/api/upload", { method: "POST", body: fd });
     setUploading(false);
     if (!res.ok) {
@@ -64,17 +67,19 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
         <p className="text-sm font-medium text-stone-900">Photos</p>
         <p className="text-xs text-stone-500">
           The first photo is the cover (hero on the listing and in search). Click any other photo to make it the cover.
-          JPEG, PNG, WebP, or GIF. Stored under /public/uploads in dev; swap to S3/Cloudinary later.
+          You can select several images at once. JPEG, PNG, WebP, or GIF. Stored under /public/uploads in dev; swap to
+          S3/Cloudinary later.
         </p>
         <label className="mt-3 inline-flex cursor-pointer rounded-full border border-stone-200 bg-white px-4 py-2 text-sm hover:border-stone-300">
           <input
             type="file"
+            multiple
             accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
             className="hidden"
             disabled={uploading}
             onChange={onFile}
           />
-          {uploading ? "Uploading…" : "Upload image"}
+          {uploading ? "Uploading…" : "Upload images"}
         </label>
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

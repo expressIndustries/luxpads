@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { getUploadsRoot } from "@/lib/uploads-path";
 
 export type StoredObject = { url: string; key: string };
 
@@ -37,9 +38,10 @@ export async function saveUploadedImage(
   const ext = extensionForImageFile(file);
   const key = `${subfolder}/${randomUUID()}${ext}`;
   const bytes = Buffer.from(await file.arrayBuffer());
-  const dir = path.join(process.cwd(), "public", "uploads", subfolder);
+  const root = getUploadsRoot();
+  const dir = path.join(root, subfolder);
   await mkdir(dir, { recursive: true });
-  const full = path.join(process.cwd(), "public", "uploads", key);
+  const full = path.join(root, key);
   await writeFile(full, bytes);
   return { url: `/uploads/${key}`, key };
 }

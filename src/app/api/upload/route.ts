@@ -3,6 +3,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAllowedListingImageMime, saveUploadedImage } from "@/lib/storage";
 
+/** Max files per request (FormData can append many `file` entries). */
+const MAX_FILES_PER_UPLOAD = 24;
+
 export async function POST(req: Request) {
   const session = await auth();
   const role = session?.user?.role;
@@ -11,10 +14,24 @@ export async function POST(req: Request) {
   }
 
   const form = await req.formData();
-  const file = form.get("file");
   const listingId = form.get("listingId");
-  if (!(file instanceof File) || typeof listingId !== "string") {
+  if (typeof listingId !== "string") {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const files = form
+    .getAll("file")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+  if (files.length === 0) {
+    return NextResponse.json({ error: "No image files provided." }, { status: 400 });
+  }
+
+  if (files.length > MAX_FILES_PER_UPLOAD) {
+    return NextResponse.json(
+      { error: `You can upload at most ${MAX_FILES_PER_UPLOAD} images at once.` },
+      { status: 400 },
+    );
   }
 
   const listing = await prisma.listing.findFirst({
@@ -24,27 +41,35 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
-  if (!isAllowedListingImageMime(file.type)) {
-    return NextResponse.json(
-      { error: "Use a JPEG, PNG, WebP, or GIF image." },
-      { status: 400 },
-    );
+  for (const file of files) {
+    if (!isAllowedListingImageMime(file.type)) {
+      return NextResponse.json(
+        { error: "Each file must be a JPEG, PNG, WebP, or GIF image." },
+        { status: 400 },
+      );
+    }
   }
 
   const agg = await prisma.listingImage.aggregate({
     where: { listingId },
     _max: { sortOrder: true },
   });
-  const nextOrder = (agg._max.sortOrder ?? -1) + 1;
-  const stored = await saveUploadedImage(file, "listings");
-  const row = await prisma.listingImage.create({
-    data: {
-      listingId,
-      url: stored.url,
-      sortOrder: nextOrder,
-      alt: listing.title,
-    },
-  });
+  let nextOrder = (agg._max.sortOrder ?? -1) + 1;
 
-  return NextResponse.json({ url: row.url, id: row.id });
+  const images: { id: string; url: string }[] = [];
+  for (const file of files) {
+    const stored = await saveUploadedImage(file, "listings");
+    const row = await prisma.listingImage.create({
+      data: {
+        listingId,
+        url: stored.url,
+        sortOrder: nextOrder,
+        alt: listing.title,
+      },
+    });
+    nextOrder += 1;
+    images.push({ id: row.id, url: row.url });
+  }
+
+  return NextResponse.json({ images });
 }

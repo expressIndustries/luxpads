@@ -52,6 +52,11 @@ services:
       MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN:-}
       NODE_ENV: production
       REQUIRE_LISTING_APPROVAL: ${REQUIRE_LISTING_APPROVAL:-true}
+      # Optional: set to same path if you mount a volume (see volumes below).
+      # LUXPADS_UPLOADS_ROOT: /data/luxpads-uploads
+    volumes:
+      # Persist listing photos across container rebuilds (and share if you scale replicas).
+      - luxpads_uploads:/app/public/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -70,3 +75,4 @@ services:
 
 volumes:
   luxpads_mysql:
+  luxpads_uploads:
