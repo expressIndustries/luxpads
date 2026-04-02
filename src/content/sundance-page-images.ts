@@ -1,18 +1,17 @@
+import type { StaticImageData } from "next/image";
+import flatirons from "@/assets/sundance/flatirons-sundance-film-festival-boulder-colorado-01.jpg";
+import pearlStreet from "@/assets/sundance/pearl-street-sundance-film-festival-boulder-colorado-01.jpg";
+import boulderGeneral from "@/assets/sundance/sundance-film-festival-boulder-colorado-01.jpg";
+import theater from "@/assets/sundance/sundance-film-festival-boulder-theater.jpg";
+
+type Moment = { src: StaticImageData; alt: string; caption: string };
+
 /**
- * Static art for `/rent-home-for-sundance-film-festival-boulder`.
- * Files live in `public/images/sundance/` (served as `/images/sundance/...`).
+ * Sundance landing art — imported so Next bundles files into `/_next/static/media/…`
+ * (reliable in Docker/standalone; avoids depending on `public/` sync alone).
  */
-const base = "/images/sundance";
-
-const flatirons = `${base}/flatirons-sundance-film-festival-boulder-colorado-01.jpg`;
-const pearlStreet = `${base}/pearl-street-sundance-film-festival-boulder-colorado-01.jpg`;
-const boulderGeneral = `${base}/sundance-film-festival-boulder-colorado-01.jpg`;
-const theater = `${base}/sundance-film-festival-boulder-theater.jpg`;
-
 export const sundancePageImages = {
-  /** Full-bleed hero behind the headline */
   hero: flatirons,
-  /** Four-up “Boulder in the frame” row */
   boulderMoments: [
     {
       src: flatirons,
@@ -34,8 +33,7 @@ export const sundancePageImages = {
       alt: "Mountain town character near Boulder",
       caption: "Mountain town character",
     },
-  ],
-  /** Two-up “Homes that fit the moment” */
+  ] satisfies Moment[],
   homeInspiration: [
     {
       src: theater,
@@ -47,5 +45,5 @@ export const sundancePageImages = {
       alt: "Boulder-area home exterior or curb appeal",
       caption: "Boulder-area curb appeal",
     },
-  ],
-} as const;
+  ] satisfies Moment[],
+};

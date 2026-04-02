@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `Sundance Boulder 2027 | ${siteCopy.legalName}`,
     description: "Rent your home for the 2027 Sundance Film Festival in Boulder, Colorado.",
-    images: [{ url: sundancePageImages.hero, alt: "Sundance Film Festival in Boulder — LuxPads" }],
+    images: [{ url: sundancePageImages.hero.src, alt: "Sundance Film Festival in Boulder — LuxPads" }],
   },
 };
 
@@ -141,7 +141,7 @@ export default function SundanceBoulderPage() {
           <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Boulder in the frame</h3>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {sundancePageImages.boulderMoments.map((img) => (
-              <figure key={img.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+              <figure key={img.src.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="relative aspect-[4/3]">
                   <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width:1024px) 50vw, 25vw" />
                 </div>
@@ -159,7 +159,7 @@ export default function SundanceBoulderPage() {
           </p>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {sundancePageImages.homeInspiration.map((img) => (
-              <figure key={img.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+              <figure key={img.src.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="relative aspect-[16/10]">
                   <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width:768px) 100vw, 50vw" />
                 </div>
