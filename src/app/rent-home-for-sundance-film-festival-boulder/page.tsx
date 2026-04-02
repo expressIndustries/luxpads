@@ -86,6 +86,7 @@ export default function SundanceBoulderPage() {
           alt=""
           fill
           priority
+          unoptimized
           className="object-cover"
           sizes="100vw"
         />
@@ -143,7 +144,14 @@ export default function SundanceBoulderPage() {
             {sundancePageImages.boulderMoments.map((img) => (
               <figure key={img.src.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="relative aspect-[4/3]">
-                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width:1024px) 50vw, 25vw" />
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                    sizes="(max-width:1024px) 50vw, 25vw"
+                  />
                 </div>
                 <figcaption className="border-t border-stone-100 px-3 py-2 text-xs text-stone-600">{img.caption}</figcaption>
               </figure>
@@ -161,7 +169,14 @@ export default function SundanceBoulderPage() {
             {sundancePageImages.homeInspiration.map((img) => (
               <figure key={img.src.src} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="relative aspect-[16/10]">
-                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="(max-width:768px) 100vw, 50vw" />
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                    sizes="(max-width:768px) 100vw, 50vw"
+                  />
                 </div>
                 <figcaption className="border-t border-stone-100 px-4 py-3 text-sm text-stone-700">{img.caption}</figcaption>
               </figure>

@@ -9,6 +9,7 @@ type Moment = { src: StaticImageData; alt: string; caption: string };
 /**
  * Sundance landing art — imported so Next bundles files into `/_next/static/media/…`
  * (reliable in Docker/standalone; avoids depending on `public/` sync alone).
+ * Page uses `unoptimized` on `<Image>` so prod skips `/_next/image` (Sharp is flaky on Alpine).
  */
 export const sundancePageImages = {
   hero: flatirons,
