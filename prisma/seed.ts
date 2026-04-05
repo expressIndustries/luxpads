@@ -527,7 +527,7 @@ async function main() {
         listingId: listing.id,
         startDate: new Date("2026-02-10"),
         endDate: new Date("2026-02-14"),
-        type: AvailabilityBlockType.blocked,
+        type: AvailabilityBlockType.booked,
         note: "Owner maintenance",
       },
     });

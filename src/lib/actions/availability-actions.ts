@@ -19,6 +19,12 @@ const blockSchema = z.object({
   type: z.nativeEnum(AvailabilityBlockType),
 });
 
+const updateBlockSchema = z.object({
+  blockId: z.string().min(10).max(64),
+  listingId: z.string().min(10).max(64),
+  type: z.nativeEnum(AvailabilityBlockType),
+});
+
 export async function addAvailabilityBlock(formData: FormData): Promise<void> {
   try {
     const session = await auth();
@@ -27,7 +33,7 @@ export async function addAvailabilityBlock(formData: FormData): Promise<void> {
       listingId: formData.get("listingId"),
       startDate: formData.get("startDate"),
       endDate: formData.get("endDate"),
-      type: formData.get("type") || AvailabilityBlockType.blocked,
+      type: formData.get("type") || AvailabilityBlockType.available,
     });
     if (!parsed.success) return;
     await assertListingOwner(parsed.data.listingId, session.user.id);
@@ -51,6 +57,33 @@ export async function addAvailabilityBlock(formData: FormData): Promise<void> {
     revalidatePath("/search");
   } catch {
     /* noop — form has no error UI for MVP */
+  }
+}
+
+export async function updateAvailabilityBlock(formData: FormData): Promise<void> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id || session.user.role !== "owner") return;
+    const parsed = updateBlockSchema.safeParse({
+      blockId: formData.get("blockId"),
+      listingId: formData.get("listingId"),
+      type: formData.get("type"),
+    });
+    if (!parsed.success) return;
+    await assertListingOwner(parsed.data.listingId, session.user.id);
+    await prisma.availabilityBlock.updateMany({
+      where: { id: parsed.data.blockId, listingId: parsed.data.listingId },
+      data: { type: parsed.data.type },
+    });
+    const listing = await prisma.listing.findFirst({
+      where: { id: parsed.data.listingId },
+      select: { slug: true },
+    });
+    revalidatePath("/dashboard/calendar");
+    if (listing) revalidatePath(`/listing/${listing.slug}`);
+    revalidatePath("/search");
+  } catch {
+    /* noop */
   }
 }
 

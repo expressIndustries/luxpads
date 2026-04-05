@@ -512,7 +512,7 @@ function main() {
     );
     availCounter++;
     lines.push(
-      `INSERT INTO \`AvailabilityBlock\` (\`id\`,\`listingId\`,\`startDate\`,\`endDate\`,\`type\`,\`note\`,\`createdAt\`) VALUES (${q(`cseedavail${String(availCounter).padStart(4, "0")}block`)},${q(h.id)},'2026-02-10','2026-02-14','blocked',${q("Owner maintenance")},${now3()});`,
+      `INSERT INTO \`AvailabilityBlock\` (\`id\`,\`listingId\`,\`startDate\`,\`endDate\`,\`type\`,\`note\`,\`createdAt\`) VALUES (${q(`cseedavail${String(availCounter).padStart(4, "0")}block`)},${q(h.id)},'2026-02-10','2026-02-14','booked',${q("Owner maintenance")},${now3()});`,
     );
   }
   lines.push("");

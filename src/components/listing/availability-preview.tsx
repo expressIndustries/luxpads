@@ -1,15 +1,36 @@
 "use client";
 
-import { blockedDatesSet } from "@/lib/availability";
+import {
+  calendarInitialMonthOffset,
+  explicitAvailableDatesSet,
+  unavailableDatesSet,
+} from "@/lib/availability";
 import type { AvailabilityBlock } from "@prisma/client";
 import { addMonths, eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const WINDOW_SIZE = 3;
 
-export function AvailabilityPreview({ blocks }: { blocks: Pick<AvailabilityBlock, "startDate" | "endDate">[] }) {
-  const blocked = useMemo(() => blockedDatesSet(blocks), [blocks]);
+export function AvailabilityPreview({
+  blocks,
+}: {
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[];
+}) {
+  const unavailable = useMemo(() => unavailableDatesSet(blocks), [blocks]);
+  const availableMarked = useMemo(() => explicitAvailableDatesSet(blocks), [blocks]);
+  const blocksKey = useMemo(
+    () =>
+      blocks
+        .map((b) => `${b.startDate.toString()}-${b.endDate.toString()}-${b.type}`)
+        .join("|"),
+    [blocks],
+  );
+
   const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    setOffset(calendarInitialMonthOffset(blocks, WINDOW_SIZE));
+  }, [blocksKey]);
 
   const anchor = startOfMonth(new Date());
   const firstMonth = addMonths(anchor, offset);
@@ -43,15 +64,26 @@ export function AvailabilityPreview({ blocks }: { blocks: Pick<AvailabilityBlock
       </div>
       <div className="grid gap-8 lg:grid-cols-3">
         {months.map((m) => (
-          <MonthMini key={format(m, "yyyy-MM")} month={m} blocked={blocked} />
+          <MonthMini key={format(m, "yyyy-MM")} month={m} unavailable={unavailable} availableMarked={availableMarked} />
         ))}
       </div>
-      <p className="mt-6 text-xs text-stone-500">Dark dates are blocked or booked on the owner calendar.</p>
+      <p className="mt-6 text-xs text-stone-500">
+        Dark dates are booked, booking in progress, or otherwise unavailable. Light green highlights dates the owner
+        marked explicitly available. Unmarked open dates are still shown as open.
+      </p>
     </div>
   );
 }
 
-function MonthMini({ month, blocked }: { month: Date; blocked: Set<string> }) {
+function MonthMini({
+  month,
+  unavailable,
+  availableMarked,
+}: {
+  month: Date;
+  unavailable: Set<string>;
+  availableMarked: Set<string>;
+}) {
   const start = startOfMonth(month);
   const end = endOfMonth(month);
   const days = eachDayOfInterval({ start, end });
@@ -71,12 +103,17 @@ function MonthMini({ month, blocked }: { month: Date; blocked: Set<string> }) {
         ))}
         {days.map((d) => {
           const key = format(d, "yyyy-MM-dd");
-          const isBlocked = blocked.has(key);
+          const isUnavailable = unavailable.has(key);
+          const isAvailMarked = !isUnavailable && availableMarked.has(key);
           return (
             <span
               key={key}
               className={`flex h-8 items-center justify-center rounded-lg text-xs ${
-                isBlocked ? "bg-stone-800 text-white" : "bg-white text-stone-700 ring-1 ring-stone-200"
+                isUnavailable
+                  ? "bg-stone-800 text-white"
+                  : isAvailMarked
+                    ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200"
+                    : "bg-white text-stone-700 ring-1 ring-stone-200"
               }`}
             >
               {format(d, "d")}

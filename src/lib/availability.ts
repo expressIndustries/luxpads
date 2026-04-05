@@ -1,5 +1,10 @@
-import type { AvailabilityBlock } from "@prisma/client";
-import { addDays, startOfDay } from "date-fns";
+import { AvailabilityBlockType, type AvailabilityBlock } from "@prisma/client";
+import { addDays, differenceInCalendarMonths, format, startOfDay } from "date-fns";
+
+/** Types that count as unavailable for guests (search + public calendar). */
+export function isUnavailableBlockType(type: AvailabilityBlockType): boolean {
+  return type === AvailabilityBlockType.booked || type === AvailabilityBlockType.booking_in_progress;
+}
 
 /** Inclusive date-only range overlap (DATE columns stored as UTC midnight). */
 export function rangesOverlap(
@@ -16,17 +21,22 @@ export function rangesOverlap(
 }
 
 export function isRangeBlocked(
-  blocks: Pick<AvailabilityBlock, "startDate" | "endDate">[],
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
   checkIn: Date,
   checkOut: Date,
 ): boolean {
-  return blocks.some((b) => rangesOverlap(checkIn, checkOut, b.startDate, b.endDate));
+  return blocks
+    .filter((b) => isUnavailableBlockType(b.type))
+    .some((b) => rangesOverlap(checkIn, checkOut, b.startDate, b.endDate));
 }
 
-/** Build a Set of YYYY-MM-DD strings that are unavailable (inclusive block dates). */
-export function blockedDatesSet(blocks: Pick<AvailabilityBlock, "startDate" | "endDate">[]) {
+/** YYYY-MM-DD keys for dates that are unavailable to guests. */
+export function unavailableDatesSet(
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
+): Set<string> {
   const set = new Set<string>();
   for (const b of blocks) {
+    if (!isUnavailableBlockType(b.type)) continue;
     let d = startOfDay(b.startDate);
     const end = startOfDay(b.endDate);
     while (!isAfterDay(d, end)) {
@@ -37,11 +47,64 @@ export function blockedDatesSet(blocks: Pick<AvailabilityBlock, "startDate" | "e
   return set;
 }
 
+/** @deprecated Use unavailableDatesSet — same behavior for guest-facing calendars. */
+export function blockedDatesSet(
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
+): Set<string> {
+  return unavailableDatesSet(blocks);
+}
+
+/** Days explicitly marked Available by the owner (for subtle highlight). */
+export function explicitAvailableDatesSet(
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
+): Set<string> {
+  const unavailable = unavailableDatesSet(blocks);
+  const set = new Set<string>();
+  for (const b of blocks) {
+    if (b.type !== AvailabilityBlockType.available) continue;
+    let d = startOfDay(b.startDate);
+    const end = startOfDay(b.endDate);
+    while (!isAfterDay(d, end)) {
+      const key = d.toISOString().slice(0, 10);
+      if (!unavailable.has(key)) set.add(key);
+      d = addDays(d, 1);
+    }
+  }
+  return set;
+}
+
 function isAfterDay(a: Date, b: Date) {
   return startOfDay(a).getTime() > startOfDay(b).getTime();
 }
 
+/** First calendar day from today onward that is not unavailable (for default calendar view). */
+export function firstGuestAvailableDate(
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
+): Date | null {
+  const unavailable = unavailableDatesSet(blocks);
+  const today = startOfDay(new Date());
+  const cap = addDays(today, 800);
+  for (let d = today; d.getTime() <= cap.getTime(); d = addDays(d, 1)) {
+    const key = format(d, "yyyy-MM-dd");
+    if (!unavailable.has(key)) return d;
+  }
+  return null;
+}
+
+/** Month offset (in months, aligned to `windowSize` steps) so the first guest-available date appears in the grid. */
+export function calendarInitialMonthOffset(
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
+  windowSize: number,
+): number {
+  const anchor = startOfDay(new Date());
+  const anchorMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const first = firstGuestAvailableDate(blocks);
+  if (!first) return 0;
+  const targetMonth = new Date(first.getFullYear(), first.getMonth(), 1);
+  const diff = differenceInCalendarMonths(targetMonth, anchorMonth);
+  return Math.max(0, Math.floor(diff / windowSize) * windowSize);
+}
+
 export function mergeSuggestionsForICal() {
-  // Hook for future iCal import — keep API stable
   return { supported: false as const };
 }

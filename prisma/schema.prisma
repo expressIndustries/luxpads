@@ -25,7 +25,11 @@ enum ListingStatus {
 }
 
 enum AvailabilityBlockType {
-  blocked
+  /// Owner-marked open window for guests (shown as available on the listing calendar).
+  available
+  /// Hold / tentative — treat as unavailable for search and public calendar.
+  booking_in_progress
+  /// Confirmed booking or otherwise unavailable.
   booked
 }
 
@@ -149,7 +153,7 @@ model AvailabilityBlock {
   listing   Listing                 @relation(fields: [listingId], references: [id], onDelete: Cascade)
   startDate DateTime                @db.Date
   endDate   DateTime                @db.Date
-  type      AvailabilityBlockType   @default(blocked)
+  type      AvailabilityBlockType   @default(available)
   note      String?
   createdAt DateTime                @default(now())
 

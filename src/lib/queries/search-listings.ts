@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { AvailabilityBlockType, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { publicListingWhere } from "@/lib/listing-visibility";
 import { startOfDay } from "date-fns";
@@ -68,6 +68,7 @@ export async function searchListings(params: SearchListingParams) {
     if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end >= start) {
       const blocked = await prisma.availabilityBlock.findMany({
         where: {
+          type: { in: [AvailabilityBlockType.booked, AvailabilityBlockType.booking_in_progress] },
           AND: [{ startDate: { lte: end } }, { endDate: { gte: start } }],
         },
         select: { listingId: true },

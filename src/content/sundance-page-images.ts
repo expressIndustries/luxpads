@@ -44,8 +44,8 @@ export const sundancePageImages = {
     },
     {
       src: "https://luxpads.s3.us-east-1.amazonaws.com/listing-images/27bf29ad-256d-4779-99c4-ce771b418a9e.webp",
-      alt: "Boulder-area home exterior and curb appeal",
-      caption: "Boulder-area curb appeal",
+      alt: "Comfortable Boulder-area stay during the Sundance Film Festival",
+      caption: "Enjoy the Sundance Festival in Comfort",
     },
   ] satisfies RemoteMoment[],
 };
