@@ -89,7 +89,7 @@ export default async function ListingDetailPage({ params }: Props) {
 
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-[1fr_380px] sm:px-6 lg:px-8">
           <div className="space-y-12">
-            {listing.images.length > 1 ? (
+            {listing.images.length > 0 ? (
               <section>
                 <h2 className="font-serif text-2xl text-stone-900">Gallery</h2>
                 <ListingGalleryLightboxGrid />

@@ -180,18 +180,17 @@ export function ListingHeroLightboxTrigger() {
 
 export function ListingGalleryLightboxGrid() {
   const { images, listingTitle, openAt } = useLightbox();
-  const gallery = images.slice(1);
-  if (gallery.length === 0) return null;
+  if (images.length === 0) return null;
 
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      {gallery.map((img, k) => (
+      {images.map((img, i) => (
         <button
           key={img.id}
           type="button"
-          onClick={() => openAt(k + 1)}
+          onClick={() => openAt(i)}
           className="relative aspect-[4/3] cursor-zoom-in overflow-hidden rounded-2xl bg-stone-100 text-left ring-stone-900/0 transition hover:ring-2 hover:ring-stone-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-800"
-          aria-label={`View photo ${k + 2} of ${images.length}`}
+          aria-label={`View photo ${i + 1} of ${images.length}`}
         >
           <Image
             src={img.url}
