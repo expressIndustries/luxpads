@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { offsetViewportCenter } from "@/lib/maps/approximate-area";
+import { offsetViewportCenter, PRIVACY_MAP_DISK_RADIUS_MILES } from "@/lib/maps/approximate-area";
 import { GOOGLE_MAP_CUSTOM_STYLES, GOOGLE_MAP_PIN_ICON_URL } from "@/lib/maps/google-map-styles";
 
-const CIRCLE_RADIUS_M = 0.15 * 1609.34;
+const PRIVACY_DISK_RADIUS_M = PRIVACY_MAP_DISK_RADIUS_MILES * 1609.34;
 
 type Props = {
   lat: number;
@@ -13,8 +13,10 @@ type Props = {
   mapSalt?: string | null;
   apiKey: string;
   label?: string;
-  mapsSearchQuery?: string | null;
 };
+
+/** Tighter zoom on the offset viewport; exact coords are never pinned (privacy). */
+const MAP_ZOOM = 17;
 
 export function ListingInteractiveMap({
   lat,
@@ -22,7 +24,6 @@ export function ListingInteractiveMap({
   mapSalt,
   apiKey,
   label = "Approximate Location",
-  mapsSearchQuery,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
@@ -44,7 +45,7 @@ export function ListingInteractiveMap({
       if (cancelled || !el) return;
 
       const map = new Map(el, {
-        zoom: 14,
+        zoom: MAP_ZOOM,
         center: { lat: viewCenter.lat, lng: viewCenter.lng },
         disableDefaultUI: true,
         zoomControl: true,
@@ -54,23 +55,23 @@ export function ListingInteractiveMap({
       if (mapSalt?.trim()) {
         new g.Circle({
           map,
-          center: { lat, lng },
-          radius: CIRCLE_RADIUS_M,
+          center: { lat: viewCenter.lat, lng: viewCenter.lng },
+          radius: PRIVACY_DISK_RADIUS_M,
           fillColor: "#FF0000",
           fillOpacity: 0.28,
           strokeColor: "#FF0000",
           strokeWeight: 2,
         });
+      } else {
+        new g.Marker({
+          position: { lat, lng },
+          map,
+          icon: {
+            url: GOOGLE_MAP_PIN_ICON_URL,
+            scaledSize: new g.Size(20, 24),
+          },
+        });
       }
-
-      new g.Marker({
-        position: { lat, lng },
-        map,
-        icon: {
-          url: GOOGLE_MAP_PIN_ICON_URL,
-          scaledSize: new g.Size(20, 24),
-        },
-      });
     })();
 
     return () => {
@@ -78,9 +79,6 @@ export function ListingInteractiveMap({
       el.innerHTML = "";
     };
   }, [scriptReady, lat, lng, mapSalt, viewCenter.lat, viewCenter.lng]);
-
-  const openQuery = mapsSearchQuery?.trim() || `${lat},${lng}`;
-  const openHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(openQuery)}`;
 
   return (
     <figure className="space-y-2">
@@ -95,16 +93,8 @@ export function ListingInteractiveMap({
         className="aspect-[16/9] min-h-[220px] w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100 shadow-sm"
         aria-label={label}
       />
-      <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
-        <span>Map data © Google</span>
-        <a
-          href={openHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-amber-900 underline-offset-2 hover:underline"
-        >
-          Open in Google Maps
-        </a>
+      <figcaption className="text-xs text-stone-500">
+        Approximate area only — not the exact address. Map data © Google
       </figcaption>
     </figure>
   );

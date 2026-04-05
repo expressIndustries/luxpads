@@ -7,7 +7,6 @@ type Props = {
   lng?: number | null;
   locationQuery?: string | null;
   mapSalt?: string | null;
-  mapsSearchQuery?: string | null;
 };
 
 function mapKey() {
@@ -27,7 +26,7 @@ function mapProvider() {
 }
 
 /**
- * Google + coordinates + any API key: interactive JS map (styled, pin).
+ * Google + coordinates + API key: interactive JS map (offset center + privacy disk when mapSalt).
  * Otherwise same behavior as MapPlaceholder (static / Mapbox / fallback).
  */
 export function ListingMap(props: Props) {
@@ -43,7 +42,6 @@ export function ListingMap(props: Props) {
         mapSalt={props.mapSalt}
         apiKey={key}
         label={props.label}
-        mapsSearchQuery={props.mapsSearchQuery}
       />
     );
   }

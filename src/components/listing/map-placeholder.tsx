@@ -4,10 +4,8 @@ type MapPlaceholderProps = {
   lng?: number | null;
   /** When lat/lng are missing, Google Static Maps can still center on a free-text address. */
   locationQuery?: string | null;
-  /** With coordinates, enables privacy map: red ~0.15 mi circle at true point, viewport offset from exact location. */
+  /** With coordinates, enables privacy map: offset viewport + small red disk at offset center (not exact coords). */
   mapSalt?: string | null;
-  /** "Open in Google Maps" search text (e.g. city + state) so exact coords are not linked. */
-  mapsSearchQuery?: string | null;
 };
 
 /** Server-side keys (read at runtime) — use these in Docker/production so you do not need rebuild after setting .env. */
@@ -43,7 +41,7 @@ function googleStaticMapProxySrcFromAddress(address: string): string {
 function mapboxStaticMapUrl(lat: number, lng: number, accessToken: string): string {
   // Center + zoom (no overlay) — same pattern as Mapbox docs; avoids overlay encoding edge cases.
   const params = new URLSearchParams({ access_token: accessToken });
-  return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${lng},${lat},14/640x360@2x?${params.toString()}`;
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${lng},${lat},17/640x360@2x?${params.toString()}`;
 }
 
 function FallbackPlaceholder({
@@ -79,7 +77,6 @@ export function MapPlaceholder({
   lng,
   locationQuery,
   mapSalt,
-  mapsSearchQuery,
 }: MapPlaceholderProps) {
   const { provider, googleKey, mapboxToken } = mapEnv();
 
@@ -99,13 +96,6 @@ export function MapPlaceholder({
     const src = coordsOk
       ? googleStaticMapProxySrc(lat!, lng!, mapSalt)
       : googleStaticMapProxySrcFromAddress(locationQuery!.trim());
-    const openQuery =
-      coordsOk && mapsSearchQuery?.trim()
-        ? mapsSearchQuery.trim()
-        : coordsOk
-          ? `${lat},${lng}`
-          : locationQuery!.trim();
-    const openHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(openQuery)}`;
     return (
       <figure className="space-y-2">
         <p className="text-sm font-medium text-stone-900">{label}</p>
@@ -119,11 +109,11 @@ export function MapPlaceholder({
             referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
-        <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
-          <span>Map data © Google</span>
-          <a href={openHref} target="_blank" rel="noopener noreferrer" className="font-medium text-amber-900 underline-offset-2 hover:underline">
-            Open in Google Maps
-          </a>
+        <figcaption className="text-xs text-stone-500">
+          {coordsOk && mapSalt?.trim()
+            ? "Approximate area only — not the exact address. "
+            : null}
+          Map data © Google
         </figcaption>
       </figure>
     );
@@ -131,9 +121,6 @@ export function MapPlaceholder({
 
   if (provider === "mapbox" && mapboxToken && lat != null && lng != null) {
     const src = mapboxStaticMapUrl(lat, lng, mapboxToken);
-    const openHref = mapsSearchQuery?.trim()
-      ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(mapsSearchQuery.trim())}`
-      : `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=14/${lat}/${lng}`;
     return (
       <figure className="space-y-2">
         <p className="text-sm font-medium text-stone-900">{label}</p>
@@ -142,10 +129,7 @@ export function MapPlaceholder({
           <img src={src} alt={label} className="h-full w-full object-cover" loading="lazy" />
         </div>
         <figcaption className="text-xs text-stone-500">
-          © Mapbox © OpenStreetMap ·{" "}
-          <a href={openHref} target="_blank" rel="noopener noreferrer" className="font-medium text-amber-900 underline-offset-2 hover:underline">
-            View area on OpenStreetMap
-          </a>
+          © Mapbox © OpenStreetMap — preview only; not an exact address pin.
         </figcaption>
       </figure>
     );

@@ -91,6 +91,25 @@ export function firstGuestAvailableDate(
   return null;
 }
 
+/**
+ * Earliest start date among owner `available` blocks that still apply on or after today.
+ * Used to scroll the listing calendar to the first marketed open window (e.g. only Jan 2027 open).
+ */
+export function firstFutureAvailableBlockStart(
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
+): Date | null {
+  const today = startOfDay(new Date());
+  let best: Date | null = null;
+  for (const b of blocks) {
+    if (b.type !== AvailabilityBlockType.available) continue;
+    const start = startOfDay(b.startDate);
+    const end = startOfDay(b.endDate);
+    if (end.getTime() < today.getTime()) continue;
+    if (!best || start.getTime() < best.getTime()) best = start;
+  }
+  return best;
+}
+
 /** Month offset (in months, aligned to `windowSize` steps) so the first guest-available date appears in the grid. */
 export function calendarInitialMonthOffset(
   blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[],
@@ -98,7 +117,8 @@ export function calendarInitialMonthOffset(
 ): number {
   const anchor = startOfDay(new Date());
   const anchorMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-  const first = firstGuestAvailableDate(blocks);
+  const first =
+    firstFutureAvailableBlockStart(blocks) ?? firstGuestAvailableDate(blocks);
   if (!first) return 0;
   const targetMonth = new Date(first.getFullYear(), first.getMonth(), 1);
   const diff = differenceInCalendarMonths(targetMonth, anchorMonth);

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { circlePathLatLngPipe, offsetViewportCenter } from "@/lib/maps/approximate-area";
+import {
+  circlePathLatLngPipe,
+  offsetViewportCenter,
+  PRIVACY_MAP_DISK_RADIUS_MILES,
+} from "@/lib/maps/approximate-area";
 
 function mapKey() {
   return (
@@ -9,8 +13,8 @@ function mapKey() {
 
 /**
  * Proxies Google Static Maps so the browser loads a same-origin URL (no API key in HTML).
- * With `lat`, `lng`, and `salt`, draws a ~0.15 mi red circle at true coords and centers the
- * viewport on an offset point (privacy — not centered on the exact pin).
+ * With `lat`, `lng`, and `salt`, centers the viewport on an offset point and draws a small red
+ * disk around that offset center (not at true coords — avoids pinpointing the address).
  */
 export async function GET(req: NextRequest) {
   const key = mapKey();
@@ -39,9 +43,8 @@ export async function GET(req: NextRequest) {
     if (salt) {
       const { lat: cLat, lng: cLng } = offsetViewportCenter(lat, lng, salt);
       center = `${cLat},${cLng}`;
-      zoom = searchParams.get("zoom") || "15";
-      // Semi-transparent red fill + red outline (~0.15 mi radius at true location)
-      path = `fillcolor:0x55FF0000|color:0xFFFF0000|weight:2|${circlePathLatLngPipe(lat, lng)}`;
+      zoom = searchParams.get("zoom") || "17";
+      path = `fillcolor:0x55FF0000|color:0xFFFF0000|weight:2|${circlePathLatLngPipe(cLat, cLng, PRIVACY_MAP_DISK_RADIUS_MILES)}`;
     } else {
       center = `${lat},${lng}`;
       markers = `color:0x57534e|${lat},${lng}`;

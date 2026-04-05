@@ -7,7 +7,7 @@ import {
 } from "@/lib/availability";
 import type { AvailabilityBlock } from "@prisma/client";
 import { addMonths, eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const WINDOW_SIZE = 3;
 
@@ -16,8 +16,6 @@ export function AvailabilityPreview({
 }: {
   blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[];
 }) {
-  const unavailable = useMemo(() => unavailableDatesSet(blocks), [blocks]);
-  const availableMarked = useMemo(() => explicitAvailableDatesSet(blocks), [blocks]);
   const blocksKey = useMemo(
     () =>
       blocks
@@ -26,11 +24,17 @@ export function AvailabilityPreview({
     [blocks],
   );
 
-  const [offset, setOffset] = useState(0);
+  return <AvailabilityPreviewKeyed key={blocksKey} blocks={blocks} />;
+}
 
-  useEffect(() => {
-    setOffset(calendarInitialMonthOffset(blocks, WINDOW_SIZE));
-  }, [blocksKey]);
+function AvailabilityPreviewKeyed({
+  blocks,
+}: {
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "type">[];
+}) {
+  const unavailable = useMemo(() => unavailableDatesSet(blocks), [blocks]);
+  const availableMarked = useMemo(() => explicitAvailableDatesSet(blocks), [blocks]);
+  const [offset, setOffset] = useState(() => calendarInitialMonthOffset(blocks, WINDOW_SIZE));
 
   const anchor = startOfMonth(new Date());
   const firstMonth = addMonths(anchor, offset);

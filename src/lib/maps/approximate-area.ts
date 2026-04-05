@@ -27,6 +27,13 @@ export function offsetViewportCenter(lat: number, lng: number, salt: string): { 
 const CIRCLE_RADIUS_MILES = 0.15;
 
 /**
+ * Red disk on privacy maps: drawn at the **offset** viewport center (not at true coords).
+ * Radius is smaller than the minimum viewport offset (~0.1 mi) so the true point usually
+ * lies outside the highlighted disk.
+ */
+export const PRIVACY_MAP_DISK_RADIUS_MILES = 0.08;
+
+/**
  * Closed path `lat,lng|...` for Google Static Maps `path` (filled polygon approximating a circle).
  */
 export function circlePathLatLngPipe(lat: number, lng: number, radiusMiles = CIRCLE_RADIUS_MILES, segments = 36): string {
@@ -44,3 +51,4 @@ export function circlePathLatLngPipe(lat: number, lng: number, radiusMiles = CIR
 }
 
 export const APPROXIMATE_AREA_RADIUS_MILES = CIRCLE_RADIUS_MILES;
+export const APPROXIMATE_PRIVACY_DISK_RADIUS_MILES = PRIVACY_MAP_DISK_RADIUS_MILES;

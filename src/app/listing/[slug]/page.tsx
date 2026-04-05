@@ -157,7 +157,6 @@ export default async function ListingDetailPage({ params }: Props) {
                   lng={listing.longitude}
                   locationQuery={`${listing.addressLine1}, ${listing.city}, ${listing.state} ${listing.postalCode}`}
                   mapSalt={listing.slug}
-                  mapsSearchQuery={`${listing.city}, ${listing.state}`}
                 />
               </div>
             </div>
