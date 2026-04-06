@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { publicListingWhere } from "@/lib/listing-visibility";
+import { sortListingAmenitiesForDisplay } from "@/lib/sort-listing-amenities";
 
 export async function getPublicListingBySlug(slug: string) {
-  return prisma.listing.findFirst({
+  const listing = await prisma.listing.findFirst({
     where: publicListingWhere({ slug }),
     include: {
       images: { orderBy: { sortOrder: "asc" } },
@@ -15,4 +16,9 @@ export async function getPublicListingBySlug(slug: string) {
       },
     },
   });
+  if (!listing) return null;
+  return {
+    ...listing,
+    amenities: sortListingAmenitiesForDisplay(listing.amenities),
+  };
 }

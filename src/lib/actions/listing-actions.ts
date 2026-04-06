@@ -7,6 +7,7 @@ import { ListingStatus, type Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteStoredListingImage } from "@/lib/storage";
+import { DRAFT_LISTING_FIELD_TEMPLATES } from "@/lib/listing-draft-templates";
 import { uniqueSlug } from "@/lib/slug";
 
 async function requireOwner() {
@@ -34,16 +35,15 @@ export async function createDraftListing(): Promise<{ id: string } | { error: st
       data: {
         ownerId,
         slug,
-        title: "Untitled residence",
-        summary: "Add a compelling one-paragraph summary for search results.",
-        description:
-          "Describe your home’s story, layout, and what makes it special for guests.",
+        title: DRAFT_LISTING_FIELD_TEMPLATES.title,
+        summary: DRAFT_LISTING_FIELD_TEMPLATES.summary,
+        description: DRAFT_LISTING_FIELD_TEMPLATES.description,
         propertyType: "Estate",
-        addressLine1: "Address — edit in listing settings",
-        city: "City",
-        state: "State",
-        country: "United States",
-        postalCode: "00000",
+        addressLine1: DRAFT_LISTING_FIELD_TEMPLATES.addressLine1,
+        city: DRAFT_LISTING_FIELD_TEMPLATES.city,
+        state: DRAFT_LISTING_FIELD_TEMPLATES.state,
+        country: DRAFT_LISTING_FIELD_TEMPLATES.country,
+        postalCode: DRAFT_LISTING_FIELD_TEMPLATES.postalCode,
         maxGuests: 4,
         bedrooms: 2,
         bathrooms: 2,
@@ -60,33 +60,73 @@ export async function createDraftListing(): Promise<{ id: string } | { error: st
   }
 }
 
+const trim = z.string().transform((s) => s.trim());
+
 const listingUpdateSchema = z.object({
-  id: z.string().min(10).max(64),
-  title: z.string().min(3).max(200),
-  summary: z.string().min(20).max(600),
-  description: z.string().min(40).max(20000),
-  propertyType: z.string().min(2).max(80),
-  addressLine1: z.string().min(3).max(200),
-  city: z.string().min(2).max(120),
-  state: z.string().min(2).max(120),
-  country: z.string().min(2).max(120),
-  postalCode: z.string().min(3).max(30),
-  latitude: z.coerce.number().optional().nullable(),
-  longitude: z.coerce.number().optional().nullable(),
-  maxGuests: z.coerce.number().int().min(1).max(50),
+  id: trim.pipe(z.string().min(10).max(64)),
+  title: trim.pipe(z.string().min(1, "Title is required").max(200)),
+  /** Always saved; shorter copy is allowed — UI nudges toward 20+ chars for search. */
+  summary: trim.pipe(z.string().max(600)),
+  description: trim.pipe(z.string().max(20000)),
+  propertyType: trim.pipe(z.string().min(1, "Property type is required").max(80)),
+  addressLine1: trim.pipe(z.string().min(1, "Address is required").max(200)),
+  city: trim.pipe(z.string().min(1, "City is required").max(120)),
+  state: trim.pipe(z.string().min(1, "State or region is required").max(120)),
+  country: trim.pipe(z.string().min(1, "Country is required").max(120)),
+  postalCode: trim.pipe(z.string().min(1, "Postal code is required").max(30)),
+  latitude: z
+    .union([z.string(), z.number(), z.null(), z.undefined()])
+    .transform((v) => {
+      if (v == null || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).trim());
+      return Number.isFinite(n) ? n : null;
+    }),
+  longitude: z
+    .union([z.string(), z.number(), z.null(), z.undefined()])
+    .transform((v) => {
+      if (v == null || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).trim());
+      return Number.isFinite(n) ? n : null;
+    }),
+  maxGuests: z.coerce.number().int().min(1, "At least 1 guest").max(50),
   bedrooms: z.coerce.number().int().min(0).max(30),
   bathrooms: z.coerce.number().min(0).max(30),
-  beds: z.coerce.number().int().min(1).max(40),
-  sleepingArrangements: z.string().max(8000).optional().nullable(),
-  houseRules: z.string().max(8000).optional().nullable(),
-  checkInOut: z.string().max(4000).optional().nullable(),
-  cancellationPolicy: z.string().max(8000).optional().nullable(),
-  nightlyRateDollars: z.coerce.number().min(1).max(1000000),
-  cleaningFeeNote: z.string().max(2000).optional().nullable(),
-  minNights: z.coerce.number().int().min(1).max(365),
+  beds: z.coerce.number().int().min(1, "At least 1 bed").max(40),
+  sleepingArrangements: z.union([z.string(), z.null()]).transform((s) => (s == null ? null : s.slice(0, 8000))),
+  houseRules: z.union([z.string(), z.null()]).transform((s) => (s == null ? null : s.slice(0, 8000))),
+  checkInOut: z.union([z.string(), z.null()]).transform((s) => (s == null ? null : s.slice(0, 4000))),
+  cancellationPolicy: z.union([z.string(), z.null()]).transform((s) => (s == null ? null : s.slice(0, 8000))),
+  nightlyRateDollars: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? 0 : v),
+    z.coerce.number().min(0, "Rate cannot be negative").max(1_000_000),
+  ),
+  cleaningFeeNote: z.union([z.string(), z.null()]).transform((s) => (s == null ? null : s.slice(0, 2000))),
+  minNights: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? 1 : v),
+    z.coerce.number().int().min(1, "Minimum 1 night").max(365),
+  ),
 });
 
-export type ListingSaveState = { ok?: boolean; error?: string };
+const SUMMARY_IDEAL_MIN = 20;
+const DESCRIPTION_IDEAL_MIN = 40;
+
+export type ListingSaveState = {
+  ok?: boolean;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  warnings?: { summary?: string; description?: string };
+};
+
+function zodFieldErrors(err: z.ZodError): Record<string, string> {
+  const out: Record<string, string> = {};
+  const flat = err.flatten();
+  const fe = flat.fieldErrors as Record<string, string[] | undefined>;
+  for (const [key, msgs] of Object.entries(fe)) {
+    const first = msgs?.[0];
+    if (first) out[key] = first;
+  }
+  return out;
+}
 
 export async function updateListing(
   _prev: ListingSaveState,
@@ -107,25 +147,25 @@ export async function updateListing(
       state: formData.get("state"),
       country: formData.get("country"),
       postalCode: formData.get("postalCode"),
-      latitude: formData.get("latitude") || null,
-      longitude: formData.get("longitude") || null,
+      latitude: formData.get("latitude"),
+      longitude: formData.get("longitude"),
       maxGuests: formData.get("maxGuests"),
       bedrooms: formData.get("bedrooms"),
       bathrooms: formData.get("bathrooms"),
       beds: formData.get("beds"),
-      sleepingArrangements: formData.get("sleepingArrangements") || null,
-      houseRules: formData.get("houseRules") || null,
-      checkInOut: formData.get("checkInOut") || null,
-      cancellationPolicy: formData.get("cancellationPolicy") || null,
+      sleepingArrangements: formData.get("sleepingArrangements"),
+      houseRules: formData.get("houseRules"),
+      checkInOut: formData.get("checkInOut"),
+      cancellationPolicy: formData.get("cancellationPolicy"),
       nightlyRateDollars: formData.get("nightlyRateDollars"),
-      cleaningFeeNote: formData.get("cleaningFeeNote") || null,
+      cleaningFeeNote: formData.get("cleaningFeeNote"),
       minNights: formData.get("minNights"),
     });
 
     if (!parsed.success) {
       return {
-        error:
-          "Could not save. Check that your summary is at least 20 characters, your description at least 40, and all required fields are valid.",
+        fieldErrors: zodFieldErrors(parsed.error),
+        error: "Fix the fields marked below and save again.",
       };
     }
 
@@ -190,7 +230,18 @@ export async function updateListing(
     revalidatePath(`/listing/${slug}`);
     revalidatePath("/search");
     revalidatePath("/admin");
-    return { ok: true };
+
+    const warnings: ListingSaveState["warnings"] = {};
+    if (data.summary.length < SUMMARY_IDEAL_MIN) {
+      warnings.summary = `Your summary is short (${data.summary.length} characters). For stronger search results, aim for at least ${SUMMARY_IDEAL_MIN} characters.`;
+    }
+    if (data.description.length < DESCRIPTION_IDEAL_MIN) {
+      warnings.description = `Your description is short (${data.description.length} characters). Guests respond better with at least ${DESCRIPTION_IDEAL_MIN} characters.`;
+    }
+    return {
+      ok: true,
+      ...(Object.keys(warnings).length ? { warnings } : {}),
+    };
   } catch {
     return { error: "Something went wrong while saving. Please try again." };
   }
@@ -246,6 +297,49 @@ export async function unpublishListing(listingId: string) {
     return { ok: true as const };
   } catch {
     return { error: "Could not unpublish." };
+  }
+}
+
+const DELETE_CONFIRMATION = "DELETE";
+
+/**
+ * Permanently remove a listing (cascades DB rows). Storage objects are removed first.
+ * `confirmation` must equal {@link DELETE_CONFIRMATION} (checked server-side).
+ */
+export async function deleteListing(
+  listingId: string,
+  confirmation: string,
+): Promise<{ error?: string; ok?: boolean }> {
+  try {
+    if (confirmation !== DELETE_CONFIRMATION) {
+      return { error: `Type ${DELETE_CONFIRMATION} exactly to confirm permanent deletion.` };
+    }
+    const { userId: ownerId, isAdmin } = await requireOwnerOrAdmin();
+    const listing = await prisma.listing.findFirst({
+      where: isAdmin ? { id: listingId } : { id: listingId, ownerId },
+      include: { images: { select: { url: true } } },
+    });
+    if (!listing) {
+      return { error: "Listing not found or you don’t have permission to delete it." };
+    }
+
+    const slug = listing.slug;
+    for (const img of listing.images) {
+      await deleteStoredListingImage(img.url);
+    }
+
+    await prisma.listing.delete({ where: { id: listingId } });
+
+    revalidatePath("/dashboard/listings");
+    revalidatePath(`/dashboard/listings/${listingId}/edit`);
+    revalidatePath(`/admin/listings/${listingId}/edit`);
+    revalidatePath(`/listing/${slug}`);
+    revalidatePath("/search");
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch {
+    return { error: "Could not delete this listing. Try again or contact support." };
   }
 }
 

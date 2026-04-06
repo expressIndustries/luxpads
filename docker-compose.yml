@@ -11,6 +11,18 @@
 # First-time demo data (optional):
 #   docker compose exec app npx prisma db seed
 # (Requires tsx; if that fails, run seed from your host against port 23306 — see README.)
+#
+# ── Fast local development (hot reload, no image rebuild) ───────────────────
+# Option A — on your Mac (simplest): keep `db` running, stop production app, then:
+#   docker compose stop app
+#   npm ci && npx prisma generate && npm run dev
+#   Use DATABASE_URL=mysql://luxpads:luxpads@127.0.0.1:23306/luxpads in .env
+#
+# Option B — dev server in Docker (same DB service):
+#   docker compose stop app
+#   docker compose --profile dev up app-dev
+#   Open http://localhost:3000  (Ctrl+C to stop; `docker compose --profile dev down` optional)
+# After package.json / lockfile changes inside app-dev: docker compose run --rm app-dev npm ci
 
 services:
   db:
@@ -78,6 +90,47 @@ services:
       db:
         condition: service_healthy
 
+  # Next.js dev server + bind mount — use instead of `app` while iterating on UI/API.
+  # Does not run `next build`; changes reload in seconds. Profile keeps it off by default.
+  app-dev:
+    profiles: [dev]
+    image: node:22-alpine
+    working_dir: /app
+    ports:
+      - "${DEV_APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-mysql://luxpads:luxpads@db:3306/luxpads}
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      AUTH_SECRET: ${AUTH_SECRET:-docker-dev-change-me-use-openssl-rand-base64-32}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-LuxPads}
+      MAP_PROVIDER: ${MAP_PROVIDER:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN:-}
+      REQUIRE_LISTING_APPROVAL: ${REQUIRE_LISTING_APPROVAL:-true}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-}
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_BUCKET: ${AWS_BUCKET:-}
+      AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT:-false}
+      AWS_S3_LISTING_PREFIX: ${AWS_S3_LISTING_PREFIX:-listing-images}
+      AWS_S3_PUBLIC_BASE_URL: ${AWS_S3_PUBLIC_BASE_URL:-}
+      NEXT_IMAGE_S3_HOSTS: ${NEXT_IMAGE_S3_HOSTS:-}
+      MAILGUN_API_KEY: ${MAILGUN_API_KEY:-}
+      MAILGUN_DOMAIN: ${MAILGUN_DOMAIN:-}
+      MAILGUN_WEBHOOK_SIGNING_KEY: ${MAILGUN_WEBHOOK_SIGNING_KEY:-}
+      MAILGUN_EU: ${MAILGUN_EU:-}
+    volumes:
+      - .:/app
+      - luxpads_dev_node_modules:/app/node_modules
+      - luxpads_uploads:/app/public/uploads
+    command: ["sh", "/app/scripts/docker-dev-entry.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+
   phpmyadmin:
     image: phpmyadmin:5-apache
     restart: unless-stopped
@@ -93,3 +146,4 @@ services:
 volumes:
   luxpads_mysql:
   luxpads_uploads:
+  luxpads_dev_node_modules:

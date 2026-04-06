@@ -5,6 +5,10 @@ const s3ImageHosts = nextImageRemoteHostnames();
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  experimental: {
+    /** Listing photo uploads (single file per request); default proxy limit is 10MB. */
+    proxyClientMaxBodySize: "32mb",
+  },
   async redirects() {
     return [
       { source: "/dashboard/billing", destination: "/dashboard", permanent: true },

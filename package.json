@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
+    "dev:compose": "docker compose stop app 2>/dev/null; docker compose --profile dev up app-dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "start:prod": "next start -H 127.0.0.1 -p 3000",
@@ -17,6 +18,11 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:samples": "tsx prisma/seed-sample-listings.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
+    "db:backup:docker": "tsx scripts/db-backup.ts --docker",
+    "db:restore": "tsx scripts/db-restore.ts",
+    "db:restore:docker": "tsx scripts/db-restore.ts --docker",
     "db:sample-sql": "tsx scripts/generate-sample-data-sql.ts",
     "db:studio": "prisma studio"
   },

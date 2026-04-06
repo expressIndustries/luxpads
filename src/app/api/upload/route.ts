@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { LISTING_IMAGE_MAX_BYTES, listingImageMaxSizeLabel } from "@/lib/listing-image-upload-limits";
 import { prisma } from "@/lib/prisma";
 import { isAllowedListingImageMime, saveUploadedImage } from "@/lib/storage";
 
 /** Max files per request (FormData can append many `file` entries). */
 const MAX_FILES_PER_UPLOAD = 24;
+
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -41,10 +44,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
+  const maxLabel = listingImageMaxSizeLabel();
   for (const file of files) {
     if (!isAllowedListingImageMime(file.type)) {
       return NextResponse.json(
         { error: "Each file must be a JPEG, PNG, WebP, or GIF image." },
+        { status: 400 },
+      );
+    }
+    if (file.size > LISTING_IMAGE_MAX_BYTES) {
+      return NextResponse.json(
+        { error: `Each image must be at most ${maxLabel} (${file.name}). Upload one at a time or compress the file.` },
         { status: 400 },
       );
     }

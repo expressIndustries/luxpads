@@ -5,7 +5,8 @@
 SET FOREIGN_KEY_CHECKS=0;
 SET NAMES utf8mb4;
 
-DELETE FROM `Inquiry`;
+DELETE FROM `Message`;
+DELETE FROM `Conversation`;
 DELETE FROM `AdminAction`;
 DELETE FROM `Favorite`;
 DELETE FROM `AvailabilityBlock`;
@@ -19,18 +20,27 @@ DELETE FROM `Amenity`;
 
 SET FOREIGN_KEY_CHECKS=1;
 
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenpool00000000001','pool','Heated pool','Outdoor');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenhtub00000000001','hot-tub','Hot tub','Outdoor');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenckit00000000001','chef-kitchen','Chef''s kitchen','Interior');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenwcel00000000001','wine-cellar','Wine cellar','Interior');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenhthe00000000001','home-theater','Private theater','Interior');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamengym000000000001','gym','Fitness studio','Wellness');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenfpl00000000001','fireplace','Statement fireplace','Interior');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamencnc00000000001','concierge','Concierge-ready','Service');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenevc00000000001','ev-charging','EV charging','Parking');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenskil0000000001','ski-locker','Ski locker / mudroom','Outdoor');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamenocean000000001','ocean-view','Ocean views','Outdoor');
-INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`) VALUES ('cseedamengolf0000000001','golf','Golf access','Outdoor');
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenpool00000000001','pool','Heated pool','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenhtub00000000001','hot-tub','Hot tub','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenckit00000000001','chef-kitchen','Chef''s kitchen','Interior',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenwcel00000000001','wine-cellar','Wine cellar','Interior',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenhthe00000000001','home-theater','Private theater','Interior',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamengym000000000001','gym','Fitness studio','Wellness',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenfpl00000000001','fireplace','Statement fireplace','Interior',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenevc00000000001','ev-charging','EV charging','Parking',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenskil0000000001','ski-locker','Ski locker / mudroom','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenocean000000001','ocean-view','Ocean views','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenfpit00000000001','fire-pit','Fire pit','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenopat00000000001','outdoor-furnished-patio','Outdoor furnished patio','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenmvue00000000001','mountain-views','Mountain views','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamencvue00000000001','city-views','City views','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenebike0000000001','ebikes-scooters','eBikes / eScooters','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamenobbq00000000001','outdoor-bbq','Outdoor BBQ','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamensaun00000000001','sauna','Sauna','Wellness',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamencplu00000000001','cold-plunge','Cold plunge','Wellness',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamentrai00000000001','trail-access','Trail access','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamendtwk00000000001','downtown-walkable','Downtown walkable','Outdoor',0);
+INSERT INTO `Amenity` (`id`,`slug`,`label`,`category`,`sortOrder`) VALUES ('cseedamengolf0000000001','golf','Golf access','Outdoor',1000);
 
 INSERT INTO `User` (`id`,`email`,`emailVerified`,`passwordHash`,`name`,`phone`,`role`,`suspended`,`createdAt`,`updatedAt`) VALUES ('cseedusradmin00000000001','admin@luxpads.co',NULL,'$2b$12$jWmZyv7QSfo33Ehg7pqzIep3zVZuwKVEGDufws.uGa/f5REdJ98Hm','LuxPads Admin',NULL,'admin',0,CURRENT_TIMESTAMP(3),CURRENT_TIMESTAMP(3));
 INSERT INTO `User` (`id`,`email`,`emailVerified`,`passwordHash`,`name`,`phone`,`role`,`suspended`,`createdAt`,`updatedAt`) VALUES ('cseedusrowner1000000001','owner1@luxpads.co',NULL,'$2b$12$jWmZyv7QSfo33Ehg7pqzIep3zVZuwKVEGDufws.uGa/f5REdJ98Hm','Elena Whitmore','+1 310 555 0142','owner',0,CURRENT_TIMESTAMP(3),CURRENT_TIMESTAMP(3));
@@ -121,19 +131,20 @@ INSERT INTO `ListingImage` (`id`,`listingId`,`url`,`sortOrder`,`alt`,`createdAt`
 INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlistsonoma0000000001','cseedamenwcel00000000001');
 INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlistsonoma0000000001','cseedamenpool00000000001');
 INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlistsonoma0000000001','cseedamenckit00000000001');
-INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlistsonoma0000000001','cseedamencnc00000000001');
+INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlistsonoma0000000001','cseedamendtwk00000000001');
 INSERT INTO `AvailabilityBlock` (`id`,`listingId`,`startDate`,`endDate`,`type`,`note`,`createdAt`) VALUES ('cseedavail0017booked','cseedlistsonoma0000000001','2026-01-20','2026-01-28','booked','Private booking',CURRENT_TIMESTAMP(3));
 INSERT INTO `AvailabilityBlock` (`id`,`listingId`,`startDate`,`endDate`,`type`,`note`,`createdAt`) VALUES ('cseedavail0018block','cseedlistsonoma0000000001','2026-02-10','2026-02-14','booked','Owner maintenance',CURRENT_TIMESTAMP(3));
 INSERT INTO `Listing` (`id`,`ownerId`,`slug`,`title`,`summary`,`description`,`propertyType`,`addressLine1`,`city`,`state`,`country`,`postalCode`,`latitude`,`longitude`,`maxGuests`,`bedrooms`,`bathrooms`,`beds`,`sleepingArrangements`,`houseRules`,`checkInOut`,`cancellationPolicy`,`nightlyRateCents`,`cleaningFeeNote`,`minNights`,`status`,`featured`,`createdAt`,`updatedAt`) VALUES ('cseedlisttelluride0000001','cseedusrowner1000000001','telluride-alpine-loft','Telluride Alpine Loft','Skybridge views, layered stone, and a kitchen for fireside suppers.','Perched for alpenglow, this lofted residence pairs rugged materials with quiet luxury—ideal for small groups who want walkable charm and serious comfort.','Mountain Lodge','220 S Oak Street','Telluride','Colorado','United States','81435',37.9375,-107.8123,6,3,3.5,4,'Three bedrooms: two kings, one queen; loft sitting area.','HOA quiet hours enforced.','Meet greeter at lobby.','Owner-managed.',220000,'Gear storage in building.',4,'published',0,CURRENT_TIMESTAMP(3),CURRENT_TIMESTAMP(3));
 INSERT INTO `ListingImage` (`id`,`listingId`,`url`,`sortOrder`,`alt`,`createdAt`) VALUES ('cseedimg000019','cseedlisttelluride0000001','https://images.unsplash.com/photo-1600585154084-4e5fe7c39198?w=1600&q=80',0,'Telluride Alpine Loft',CURRENT_TIMESTAMP(3));
 INSERT INTO `ListingImage` (`id`,`listingId`,`url`,`sortOrder`,`alt`,`createdAt`) VALUES ('cseedimg000020','cseedlisttelluride0000001','https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1600&q=80',1,'Telluride Alpine Loft',CURRENT_TIMESTAMP(3));
 INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlisttelluride0000001','cseedamenfpl00000000001');
-INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlisttelluride0000001','cseedamencnc00000000001');
+INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlisttelluride0000001','cseedamenmvue00000000001');
 INSERT INTO `ListingAmenity` (`listingId`,`amenityId`) VALUES ('cseedlisttelluride0000001','cseedamenskil0000000001');
 INSERT INTO `AvailabilityBlock` (`id`,`listingId`,`startDate`,`endDate`,`type`,`note`,`createdAt`) VALUES ('cseedavail0019booked','cseedlisttelluride0000001','2026-01-20','2026-01-28','booked','Private booking',CURRENT_TIMESTAMP(3));
 INSERT INTO `AvailabilityBlock` (`id`,`listingId`,`startDate`,`endDate`,`type`,`note`,`createdAt`) VALUES ('cseedavail0020block','cseedlisttelluride0000001','2026-02-10','2026-02-14','booked','Owner maintenance',CURRENT_TIMESTAMP(3));
 
-INSERT INTO `Inquiry` (`id`,`listingId`,`renterName`,`renterEmail`,`renterPhone`,`checkIn`,`checkOut`,`guestCount`,`message`,`read`,`renterUserId`,`createdAt`) VALUES ('cseedinquiry000000000001','cseedlistaspen00000000001','Jordan Lee','renter@luxpads.co','+1 415 555 0199','2026-03-01','2026-03-06',4,'We''re a small production team looking for a quiet stay with strong Wi‑Fi and space for 4. Could you share your direct booking process and any references?',0,'cseedusrrenter000000001',CURRENT_TIMESTAMP(3));
+INSERT INTO `Conversation` (`id`,`listingId`,`ownerId`,`renterName`,`renterEmail`,`renterPhone`,`renterUserId`,`checkIn`,`checkOut`,`guestCount`,`mailThreadToken`,`createdAt`,`updatedAt`) VALUES ('cseedconv00000000000001','cseedlistaspen00000000001','cseedusrowner1000000001','Jordan Lee','renter@luxpads.co','+1 415 555 0199','cseedusrrenter000000001','2026-03-01','2026-03-06',4,'cafebabecafebabecafebabecafebabecafebabecafebabe',CURRENT_TIMESTAMP(3),CURRENT_TIMESTAMP(3));
+INSERT INTO `Message` (`id`,`conversationId`,`senderRole`,`body`,`createdAt`,`readByOwnerAt`,`readByRenterAt`) VALUES ('cseedmsg00000000000001','cseedconv00000000000001','renter','We''re a small production team looking for a quiet stay with strong Wi‑Fi and space for 4. Could you share your direct booking process and any references?',CURRENT_TIMESTAMP(3),NULL,NULL);
 
 INSERT INTO `FeaturedDestination` (`id`,`slug`,`name`,`subtitle`,`imageUrl`,`sortOrder`,`active`) VALUES ('cseeddestaspen0000000001','aspen','Aspen & Snowmass','Peak season energy, Rocky Mountain calm','https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',0,1);
 INSERT INTO `FeaturedDestination` (`id`,`slug`,`name`,`subtitle`,`imageUrl`,`sortOrder`,`active`) VALUES ('cseeddestmalibu000000001','malibu','Malibu Coast','Pacific light, private decks','https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',1,1);

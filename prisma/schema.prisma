@@ -131,11 +131,13 @@ model ListingImage {
 }
 
 model Amenity {
-  id       String           @id @default(cuid())
-  slug     String           @unique
-  label    String
-  category String?
-  listings ListingAmenity[]
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  label     String
+  category  String?
+  /// Higher values sort after lower; used to pin e.g. Golf access at end of checklist.
+  sortOrder Int              @default(0)
+  listings  ListingAmenity[]
 }
 
 model ListingAmenity {

@@ -1,3 +1,9 @@
+/**
+ * ⚠️ Destructive: deletes all application rows before inserting demo data.
+ * To keep your current data, run `npm run db:backup` or `npm run db:backup:docker` first;
+ * restore with `npm run db:restore <file>` (add `:docker` if you use the docker backup path).
+ * Do not run this against a database you need to preserve.
+ */
 import { randomBytes } from "crypto";
 import { PrismaClient, Role, ListingStatus, AvailabilityBlockType, MessageSender } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -22,18 +28,27 @@ async function main() {
 
   await prisma.amenity.createMany({
     data: [
-      { slug: "pool", label: "Heated pool", category: "Outdoor" },
-      { slug: "hot-tub", label: "Hot tub", category: "Outdoor" },
-      { slug: "chef-kitchen", label: "Chef's kitchen", category: "Interior" },
-      { slug: "wine-cellar", label: "Wine cellar", category: "Interior" },
-      { slug: "home-theater", label: "Private theater", category: "Interior" },
-      { slug: "gym", label: "Fitness studio", category: "Wellness" },
-      { slug: "fireplace", label: "Statement fireplace", category: "Interior" },
-      { slug: "concierge", label: "Concierge-ready", category: "Service" },
-      { slug: "ev-charging", label: "EV charging", category: "Parking" },
-      { slug: "ski-locker", label: "Ski locker / mudroom", category: "Outdoor" },
-      { slug: "ocean-view", label: "Ocean views", category: "Outdoor" },
-      { slug: "golf", label: "Golf access", category: "Outdoor" },
+      { slug: "pool", label: "Heated pool", category: "Outdoor", sortOrder: 0 },
+      { slug: "hot-tub", label: "Hot tub", category: "Outdoor", sortOrder: 0 },
+      { slug: "chef-kitchen", label: "Chef's kitchen", category: "Interior", sortOrder: 0 },
+      { slug: "wine-cellar", label: "Wine cellar", category: "Interior", sortOrder: 0 },
+      { slug: "home-theater", label: "Private theater", category: "Interior", sortOrder: 0 },
+      { slug: "gym", label: "Fitness studio", category: "Wellness", sortOrder: 0 },
+      { slug: "fireplace", label: "Statement fireplace", category: "Interior", sortOrder: 0 },
+      { slug: "ev-charging", label: "EV charging", category: "Parking", sortOrder: 0 },
+      { slug: "ski-locker", label: "Ski locker / mudroom", category: "Outdoor", sortOrder: 0 },
+      { slug: "ocean-view", label: "Ocean views", category: "Outdoor", sortOrder: 0 },
+      { slug: "fire-pit", label: "Fire pit", category: "Outdoor", sortOrder: 0 },
+      { slug: "outdoor-furnished-patio", label: "Outdoor furnished patio", category: "Outdoor", sortOrder: 0 },
+      { slug: "mountain-views", label: "Mountain views", category: "Outdoor", sortOrder: 0 },
+      { slug: "city-views", label: "City views", category: "Outdoor", sortOrder: 0 },
+      { slug: "ebikes-scooters", label: "eBikes / eScooters", category: "Outdoor", sortOrder: 0 },
+      { slug: "outdoor-bbq", label: "Outdoor BBQ", category: "Outdoor", sortOrder: 0 },
+      { slug: "sauna", label: "Sauna", category: "Wellness", sortOrder: 0 },
+      { slug: "cold-plunge", label: "Cold plunge", category: "Wellness", sortOrder: 0 },
+      { slug: "trail-access", label: "Trail access", category: "Outdoor", sortOrder: 0 },
+      { slug: "downtown-walkable", label: "Downtown walkable", category: "Outdoor", sortOrder: 0 },
+      { slug: "golf", label: "Golf access", category: "Outdoor", sortOrder: 1000 },
     ],
   });
 
@@ -431,7 +446,7 @@ async function main() {
         "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80",
         "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1600&q=80",
       ],
-      amenitySlugs: ["wine-cellar", "pool", "chef-kitchen", "concierge"],
+      amenitySlugs: ["wine-cellar", "pool", "chef-kitchen", "downtown-walkable"],
       ownerId: owner2.id,
     },
     {
@@ -464,7 +479,7 @@ async function main() {
         "https://images.unsplash.com/photo-1600585154084-4e5fe7c39198?w=1600&q=80",
         "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1600&q=80",
       ],
-      amenitySlugs: ["fireplace", "concierge", "ski-locker"],
+      amenitySlugs: ["fireplace", "mountain-views", "ski-locker"],
       ownerId: owner1.id,
     },
   ];

@@ -1,0 +1,25 @@
+export type ListingEditDefaults = {
+  id: string;
+  title: string;
+  summary: string;
+  description: string;
+  propertyType: string;
+  addressLine1: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  latitude: string;
+  longitude: string;
+  maxGuests: number;
+  bedrooms: number;
+  bathrooms: number;
+  beds: number;
+  sleepingArrangements: string;
+  houseRules: string;
+  checkInOut: string;
+  cancellationPolicy: string;
+  nightlyRateDollars: number;
+  minNights: number;
+  cleaningFeeNote: string;
+};

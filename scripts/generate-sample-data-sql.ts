@@ -35,19 +35,28 @@ const P = {
   o3: "cseedprofowner30000000001",
 } as const;
 
-const AMENITIES: { id: string; slug: string; label: string; category: string }[] = [
-  { id: "cseedamenpool00000000001", slug: "pool", label: "Heated pool", category: "Outdoor" },
-  { id: "cseedamenhtub00000000001", slug: "hot-tub", label: "Hot tub", category: "Outdoor" },
-  { id: "cseedamenckit00000000001", slug: "chef-kitchen", label: "Chef's kitchen", category: "Interior" },
-  { id: "cseedamenwcel00000000001", slug: "wine-cellar", label: "Wine cellar", category: "Interior" },
-  { id: "cseedamenhthe00000000001", slug: "home-theater", label: "Private theater", category: "Interior" },
-  { id: "cseedamengym000000000001", slug: "gym", label: "Fitness studio", category: "Wellness" },
-  { id: "cseedamenfpl00000000001", slug: "fireplace", label: "Statement fireplace", category: "Interior" },
-  { id: "cseedamencnc00000000001", slug: "concierge", label: "Concierge-ready", category: "Service" },
-  { id: "cseedamenevc00000000001", slug: "ev-charging", label: "EV charging", category: "Parking" },
-  { id: "cseedamenskil0000000001", slug: "ski-locker", label: "Ski locker / mudroom", category: "Outdoor" },
-  { id: "cseedamenocean000000001", slug: "ocean-view", label: "Ocean views", category: "Outdoor" },
-  { id: "cseedamengolf0000000001", slug: "golf", label: "Golf access", category: "Outdoor" },
+const AMENITIES: { id: string; slug: string; label: string; category: string; sortOrder: number }[] = [
+  { id: "cseedamenpool00000000001", slug: "pool", label: "Heated pool", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenhtub00000000001", slug: "hot-tub", label: "Hot tub", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenckit00000000001", slug: "chef-kitchen", label: "Chef's kitchen", category: "Interior", sortOrder: 0 },
+  { id: "cseedamenwcel00000000001", slug: "wine-cellar", label: "Wine cellar", category: "Interior", sortOrder: 0 },
+  { id: "cseedamenhthe00000000001", slug: "home-theater", label: "Private theater", category: "Interior", sortOrder: 0 },
+  { id: "cseedamengym000000000001", slug: "gym", label: "Fitness studio", category: "Wellness", sortOrder: 0 },
+  { id: "cseedamenfpl00000000001", slug: "fireplace", label: "Statement fireplace", category: "Interior", sortOrder: 0 },
+  { id: "cseedamenevc00000000001", slug: "ev-charging", label: "EV charging", category: "Parking", sortOrder: 0 },
+  { id: "cseedamenskil0000000001", slug: "ski-locker", label: "Ski locker / mudroom", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenocean000000001", slug: "ocean-view", label: "Ocean views", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenfpit00000000001", slug: "fire-pit", label: "Fire pit", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenopat00000000001", slug: "outdoor-furnished-patio", label: "Outdoor furnished patio", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenmvue00000000001", slug: "mountain-views", label: "Mountain views", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamencvue00000000001", slug: "city-views", label: "City views", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenebike0000000001", slug: "ebikes-scooters", label: "eBikes / eScooters", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamenobbq00000000001", slug: "outdoor-bbq", label: "Outdoor BBQ", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamensaun00000000001", slug: "sauna", label: "Sauna", category: "Wellness", sortOrder: 0 },
+  { id: "cseedamencplu00000000001", slug: "cold-plunge", label: "Cold plunge", category: "Wellness", sortOrder: 0 },
+  { id: "cseedamentrai00000000001", slug: "trail-access", label: "Trail access", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamendtwk00000000001", slug: "downtown-walkable", label: "Downtown walkable", category: "Outdoor", sortOrder: 0 },
+  { id: "cseedamengolf0000000001", slug: "golf", label: "Golf access", category: "Outdoor", sortOrder: 1000 },
 ];
 
 const slugToAmenityId = Object.fromEntries(AMENITIES.map((a) => [a.slug, a.id]));
@@ -388,7 +397,7 @@ const homes: Home[] = [
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80",
       "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1600&q=80",
     ],
-    amenitySlugs: ["wine-cellar", "pool", "chef-kitchen", "concierge"],
+    amenitySlugs: ["wine-cellar", "pool", "chef-kitchen", "downtown-walkable"],
   },
   {
     id: "cseedlisttelluride0000001",
@@ -422,7 +431,7 @@ const homes: Home[] = [
       "https://images.unsplash.com/photo-1600585154084-4e5fe7c39198?w=1600&q=80",
       "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1600&q=80",
     ],
-    amenitySlugs: ["fireplace", "concierge", "ski-locker"],
+    amenitySlugs: ["fireplace", "mountain-views", "ski-locker"],
   },
 ];
 
@@ -457,7 +466,7 @@ function main() {
 
   for (const a of AMENITIES) {
     lines.push(
-      `INSERT INTO \`Amenity\` (\`id\`,\`slug\`,\`label\`,\`category\`) VALUES (${q(a.id)},${q(a.slug)},${q(a.label)},${q(a.category)});`,
+      `INSERT INTO \`Amenity\` (\`id\`,\`slug\`,\`label\`,\`category\`,\`sortOrder\`) VALUES (${q(a.id)},${q(a.slug)},${q(a.label)},${q(a.category)},${a.sortOrder});`,
     );
   }
   lines.push("");

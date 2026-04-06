@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { searchListings } from "@/lib/queries/search-listings";
 import { ListingCard } from "@/components/listing/listing-card";
-import { PROPERTY_TYPES } from "@/lib/constants";
+import { ExploreFiltersForm } from "@/components/search/explore-filters-form";
 
 export const metadata: Metadata = {
   title: "Browse luxury homes",
@@ -23,6 +23,34 @@ function first(v: string | string[] | undefined) {
 function listParam(v: string | string[] | undefined) {
   if (!v) return [] as string[];
   return Array.isArray(v) ? v : [v];
+}
+
+function countActiveExploreFilters(params: {
+  city?: string;
+  q?: string;
+  guests?: number;
+  minBedrooms?: number;
+  minBathrooms?: number;
+  minPriceDollars?: number;
+  maxPriceDollars?: number;
+  propertyType?: string;
+  checkIn?: string;
+  checkOut?: string;
+  amenities: string[];
+}): number {
+  let n = 0;
+  if (params.city?.trim()) n += 1;
+  if (params.q?.trim()) n += 1;
+  if (params.checkIn?.trim()) n += 1;
+  if (params.checkOut?.trim()) n += 1;
+  if (params.guests != null && params.guests > 0) n += 1;
+  if (params.minBedrooms != null && params.minBedrooms > 0) n += 1;
+  if (params.minBathrooms != null && params.minBathrooms > 0) n += 1;
+  if (params.minPriceDollars != null && params.minPriceDollars > 0) n += 1;
+  if (params.maxPriceDollars != null && params.maxPriceDollars > 0) n += 1;
+  if (params.propertyType?.trim()) n += 1;
+  n += params.amenities.length;
+  return n;
 }
 
 export default async function SearchPage({ searchParams }: Props) {
@@ -56,8 +84,22 @@ export default async function SearchPage({ searchParams }: Props) {
       checkOut,
       amenities: amenitiesFilter,
     }),
-    prisma.amenity.findMany({ orderBy: { label: "asc" } }),
+    prisma.amenity.findMany({ orderBy: [{ sortOrder: "asc" }, { label: "asc" }] }),
   ]);
+
+  const activeFilterCount = countActiveExploreFilters({
+    city,
+    q,
+    guests,
+    minBedrooms,
+    minBathrooms,
+    minPriceDollars,
+    maxPriceDollars,
+    propertyType,
+    checkIn,
+    checkOut,
+    amenities,
+  });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -68,140 +110,24 @@ export default async function SearchPage({ searchParams }: Props) {
         </p>
       </header>
 
-      <form method="get" className="mt-10 space-y-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Destination</label>
-            <input
-              name="city"
-              defaultValue={city ?? ""}
-              placeholder="City or region"
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Check-in</label>
-            <input
-              name="checkIn"
-              type="date"
-              defaultValue={checkIn ?? ""}
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Check-out</label>
-            <input
-              name="checkOut"
-              type="date"
-              defaultValue={checkOut ?? ""}
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Guests</label>
-            <input
-              name="guests"
-              type="number"
-              min={1}
-              defaultValue={guests ?? ""}
-              placeholder="Any"
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Min bedrooms</label>
-            <input
-              name="minBedrooms"
-              type="number"
-              min={0}
-              defaultValue={minBedrooms ?? ""}
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Min bathrooms</label>
-            <input
-              name="minBathrooms"
-              type="number"
-              min={0}
-              step={0.5}
-              defaultValue={minBathrooms ?? ""}
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Property type</label>
-            <select
-              name="propertyType"
-              defaultValue={propertyType ?? ""}
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            >
-              <option value="">Any</option>
-              {PROPERTY_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Min price / night (USD)</label>
-            <input
-              name="minPrice"
-              type="number"
-              min={0}
-              step={100}
-              defaultValue={minPriceDollars ?? ""}
-              placeholder="e.g. 1500"
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-            <p className="text-[11px] text-stone-500">Whole dollars per night.</p>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Max price / night (USD)</label>
-            <input
-              name="maxPrice"
-              type="number"
-              min={0}
-              step={100}
-              defaultValue={maxPriceDollars ?? ""}
-              className="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm"
-            />
-          </div>
-        </div>
-        <fieldset className="space-y-3">
-          <legend className="text-xs font-semibold uppercase tracking-wide text-stone-500">Amenities</legend>
-          <div className="flex flex-wrap gap-3">
-            {amenityList.map((a) => {
-              const checked = amenities.includes(a.slug);
-              return (
-                <label key={a.id} className="flex items-center gap-2 text-sm text-stone-700">
-                  <input
-                    type="checkbox"
-                    name="amenities"
-                    value={a.slug}
-                    defaultChecked={!!checked}
-                    className="rounded border-stone-300"
-                  />
-                  {a.label}
-                </label>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-stone-500">Selecting multiple amenities narrows to homes that include all selected.</p>
-        </fieldset>
-        <input type="hidden" name="q" value={q ?? ""} />
-        <button
-          type="submit"
-          className="inline-flex rounded-full bg-stone-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-stone-800"
-        >
-          Apply filters
-        </button>
-      </form>
+      <div className="mt-10">
+        <ExploreFiltersForm
+          defaultOpen={activeFilterCount > 0}
+          activeFilterCount={activeFilterCount}
+          city={city ?? ""}
+          checkIn={checkIn ?? ""}
+          checkOut={checkOut ?? ""}
+          guests={guests != null ? String(guests) : ""}
+          minBedrooms={minBedrooms != null ? String(minBedrooms) : ""}
+          minBathrooms={minBathrooms != null ? String(minBathrooms) : ""}
+          minPrice={minPriceDollars != null ? String(minPriceDollars) : ""}
+          maxPrice={maxPriceDollars != null ? String(maxPriceDollars) : ""}
+          propertyType={propertyType ?? ""}
+          q={q ?? ""}
+          selectedAmenitySlugs={amenities}
+          amenityList={amenityList.map((a) => ({ id: a.id, slug: a.slug, label: a.label }))}
+        />
+      </div>
 
       <div className="mt-12">
         <p className="text-sm text-stone-600">

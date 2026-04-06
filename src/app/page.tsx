@@ -18,7 +18,7 @@ export default async function HomePage() {
     <div>
       <section className="relative isolate min-h-[78vh] overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2000&q=80"
+          src="https://luxpads.s3.us-east-1.amazonaws.com/listing-images/5061ef72-2524-47a2-b649-6e02ebbcb876.jpg"
           alt=""
           fill
           priority
@@ -38,44 +38,14 @@ export default async function HomePage() {
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-stone-200/95 sm:text-xl">
             No traveler booking fees. Owners list for free; you arrange stays directly with the homeowner.
           </p>
-          <form
-            action="/search"
-            method="get"
-            className="mt-10 flex w-full min-w-0 max-w-2xl flex-col gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 shadow-lg backdrop-blur-md sm:flex-row sm:items-end"
-          >
-            <div className="min-w-0 flex-1 space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-widest text-stone-200">Where</label>
-              <input
-                name="city"
-                placeholder="Boulder, CO"
-                className="w-full min-w-0 rounded-xl border border-white/20 bg-white/95 px-4 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/40"
-              />
-            </div>
-            <div className="grid min-w-0 max-w-full grid-cols-1 gap-2 sm:max-w-sm sm:flex-1 sm:grid-cols-2 sm:gap-3">
-              <div className="min-w-0 space-y-1.5 sm:space-y-2">
-                <label className="text-[10px] font-semibold uppercase tracking-widest text-stone-200">Check-in</label>
-                <input
-                  type="date"
-                  name="checkIn"
-                  className="w-full min-w-0 max-w-full rounded-xl border border-white/20 bg-white/95 px-2 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-white/40 sm:px-3 sm:py-2.5 sm:text-sm"
-                />
-              </div>
-              <div className="min-w-0 space-y-1.5 sm:space-y-2">
-                <label className="text-[10px] font-semibold uppercase tracking-widest text-stone-200">Check-out</label>
-                <input
-                  type="date"
-                  name="checkOut"
-                  className="w-full min-w-0 max-w-full rounded-xl border border-white/20 bg-white/95 px-2 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-white/40 sm:px-3 sm:py-2.5 sm:text-sm"
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
+          <div className="mt-10">
+            <Link
+              href="/search"
               className="inline-flex h-[46px] items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-stone-900 shadow-sm transition hover:bg-stone-100"
             >
-              Explore
-            </button>
-          </form>
+              Explore homes
+            </Link>
+          </div>
         </div>
       </section>
 

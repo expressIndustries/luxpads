@@ -25,7 +25,43 @@ import {
   reorderListingImages,
   setHighlightListingImage,
 } from "@/lib/actions/listing-actions";
+import { LISTING_IMAGE_MAX_BYTES, listingImageMaxSizeLabel } from "@/lib/listing-image-upload-limits";
 import { Button } from "@/components/ui/button";
+
+function uploadListingImageXHR(
+  listingId: string,
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload");
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && e.total > 0) {
+        const pct = Math.min(100, Math.max(0, Math.round((100 * e.loaded) / e.total)));
+        onProgress(pct);
+      }
+    };
+    xhr.onerror = () => resolve({ ok: false, error: "Network error — check your connection and try again." });
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve({ ok: true });
+        return;
+      }
+      try {
+        const j = JSON.parse(xhr.responseText) as { error?: string };
+        resolve({ ok: false, error: j.error ?? `Upload failed (${xhr.status})` });
+      } catch {
+        resolve({ ok: false, error: `Upload failed (${xhr.status})` });
+      }
+    };
+    const fd = new FormData();
+    fd.append("listingId", listingId);
+    fd.append("file", file);
+    xhr.send(fd);
+  });
+}
 
 type Row = { id: string; url: string; sortOrder: number };
 
@@ -135,10 +171,19 @@ function SortableImageCard({
   );
 }
 
+type UploadUi =
+  | null
+  | {
+      current: number;
+      total: number;
+      fileName: string;
+      percent: number;
+    };
+
 export function ListingImageManager({ listingId, images }: { listingId: string; images: Row[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploadUi, setUploadUi] = useState<UploadUi>(null);
   const [orderSaving, setOrderSaving] = useState(false);
   const [highlightingId, setHighlightingId] = useState<string | null>(null);
   const [ordered, setOrdered] = useState<Row[]>(() => sortRows(images));
@@ -146,6 +191,7 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
   const sig = serverSignature(images);
   useEffect(() => {
     setOrdered(sortRows(images));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `sig` tracks server image set; `images` is unstable each render
   }, [listingId, sig]);
 
   const sensors = useSensors(
@@ -153,6 +199,7 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const uploading = uploadUi !== null;
   const reorderLocked = uploading || orderSaving;
   const sortableIds = ordered.map((i) => i.id);
 
@@ -191,22 +238,41 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
     const list = e.target.files;
     if (!list?.length) return;
     const files = Array.from(list);
-    setUploading(true);
     setError(null);
-    const fd = new FormData();
-    fd.append("listingId", listingId);
-    for (const file of files) {
-      fd.append("file", file);
-    }
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    setUploading(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error ?? "Upload failed");
+
+    const maxLabel = listingImageMaxSizeLabel();
+    const tooBig = files.filter((f) => f.size > LISTING_IMAGE_MAX_BYTES);
+    if (tooBig.length) {
+      setError(
+        `Each image must be at most ${maxLabel}. These exceed the limit: ${tooBig.map((f) => f.name).join(", ")}`,
+      );
+      e.target.value = "";
       return;
     }
-    router.refresh();
+
+    const errors: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]!;
+      setUploadUi({
+        current: i + 1,
+        total: files.length,
+        fileName: file.name,
+        percent: 0,
+      });
+      const result = await uploadListingImageXHR(listingId, file, (percent) =>
+        setUploadUi((u) => (u ? { ...u, percent } : null)),
+      );
+      if (!result.ok) {
+        errors.push(`${file.name}: ${result.error}`);
+      }
+    }
+
+    setUploadUi(null);
     e.target.value = "";
+    router.refresh();
+    if (errors.length) {
+      setError(errors.length === files.length ? errors.join(" ") : `Some uploads failed: ${errors.join(" ")}`);
+    }
   }
 
   async function remove(id: string) {
@@ -239,7 +305,9 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
         <p className="text-xs text-stone-500">
           The first photo is the cover (hero on the listing and in search). Drag the{" "}
           <span className="font-medium text-stone-700">grip</span> (six dots, top-right) to reorder photos. Click
-          another photo to make it the cover. You can select several images at once. JPEG, PNG, WebP, or GIF.
+          another photo to make it the cover. You can select many files at once — they upload{" "}
+          <span className="font-medium text-stone-700">one after another</span> with a progress bar (easier on large
+          photos). JPEG, PNG, WebP, or GIF, up to {listingImageMaxSizeLabel()} each.
         </p>
         <label className="mt-3 inline-flex cursor-pointer rounded-full border border-stone-200 bg-white px-4 py-2 text-sm hover:border-stone-300">
           <input
@@ -252,6 +320,21 @@ export function ListingImageManager({ listingId, images }: { listingId: string; 
           />
           {uploading ? "Uploading…" : "Upload images"}
         </label>
+        {uploadUi ? (
+          <div className="mt-4 space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-3">
+            <p className="text-xs font-medium text-stone-800">
+              Uploading {uploadUi.current} of {uploadUi.total}
+              <span className="block truncate font-normal text-stone-600">{uploadUi.fileName}</span>
+            </p>
+            <div className="h-2 overflow-hidden rounded-full bg-stone-200">
+              <div
+                className="h-full rounded-full bg-amber-700 transition-[width] duration-150 ease-out"
+                style={{ width: `${uploadUi.percent}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-stone-500">{uploadUi.percent}% of current file</p>
+          </div>
+        ) : null}
       </div>
       {orderSaving ? (
         <p className="text-xs text-stone-500">Saving order…</p>

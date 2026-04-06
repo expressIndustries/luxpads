@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { publicListingWhere } from "@/lib/listing-visibility";
+import { SITEMAP_STATIC_PATHS } from "@/lib/sitemap-static-paths";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: { slug: true, updatedAt: true },
   });
 
-  const staticRoutes = [
-    "",
-    "/search",
-    "/owners",
-    "/about",
-    "/terms",
-    "/privacy",
-    "/login",
-    "/signup",
-  ].map((path) => ({
+  const staticRoutes = SITEMAP_STATIC_PATHS.map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,

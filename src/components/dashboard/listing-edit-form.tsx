@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ListingPublishControls } from "@/components/dashboard/listing-publish-controls";
 import { ListingImageManager } from "@/components/dashboard/listing-image-manager";
-import {
-  ListingEditFormClient,
-  type ListingEditDefaults,
-} from "@/components/dashboard/listing-edit-form-client";
+import { ListingEditFormClient } from "@/components/dashboard/listing-edit-form-client";
+import type { ListingEditDefaults } from "@/lib/listing-edit-types";
+import { stripDraftTemplatesForDisplay } from "@/lib/listing-draft-templates";
 import type { Listing, ListingImage, ListingAmenity } from "@prisma/client";
 
 type ListingWith = Listing & {
@@ -40,9 +39,20 @@ function buildDefaults(listing: ListingWith): ListingEditDefaults {
   };
 }
 
-export async function ListingEditForm({ listing }: { listing: ListingWith }) {
-  const allAmenities = await prisma.amenity.findMany({ orderBy: { label: "asc" } });
+export async function ListingEditForm({
+  listing,
+  deleteRedirectHref = "/dashboard/listings",
+}: {
+  listing: ListingWith;
+  /** Where to send the browser after a successful delete (owners vs admin). */
+  deleteRedirectHref?: string;
+}) {
+  const allAmenities = await prisma.amenity.findMany({
+    orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+  });
   const selectedAmenitySlugs = listing.amenities.map((a) => a.amenity.slug);
+  const rawDefaults = buildDefaults(listing);
+  const displayDefaults = stripDraftTemplatesForDisplay(rawDefaults);
 
   return (
     <div className="space-y-10">
@@ -54,7 +64,11 @@ export async function ListingEditForm({ listing }: { listing: ListingWith }) {
 
       <ListingEditFormClient
         listingUpdatedAt={listing.updatedAt.toISOString()}
-        defaults={buildDefaults(listing)}
+        defaults={displayDefaults}
+        submitFallbackDefaults={rawDefaults}
+        deleteListingId={listing.id}
+        deleteListingTitle={listing.title}
+        deleteRedirectHref={deleteRedirectHref}
         selectedAmenitySlugs={selectedAmenitySlugs}
         allAmenities={allAmenities.map((a) => ({ id: a.id, slug: a.slug, label: a.label }))}
       />

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ListingEditForm } from "@/components/dashboard/listing-edit-form";
+import { sortListingAmenitiesForDisplay } from "@/lib/sort-listing-amenities";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -25,7 +26,12 @@ export default async function AdminEditListingPage({ params }: Props) {
 
   if (!listing) notFound();
 
-  const ownerLabel = listing.owner.ownerProfile?.displayName ?? listing.owner.email;
+  const listingOrdered = {
+    ...listing,
+    amenities: sortListingAmenitiesForDisplay(listing.amenities),
+  };
+
+  const ownerLabel = listingOrdered.owner.ownerProfile?.displayName ?? listingOrdered.owner.email;
 
   return (
     <div className="space-y-8">
@@ -37,7 +43,7 @@ export default async function AdminEditListingPage({ params }: Props) {
           ← Back to admin
         </Link>
         <Link
-          href={`/listing/${listing.slug}`}
+          href={`/listing/${listingOrdered.slug}`}
           className="text-sm text-stone-600 underline decoration-stone-300 underline-offset-4 hover:text-stone-900"
         >
           View public listing
@@ -50,7 +56,7 @@ export default async function AdminEditListingPage({ params }: Props) {
         </p>
         <p className="mt-1 text-xs text-stone-500">Changes apply to this listing immediately after save.</p>
       </div>
-      <ListingEditForm listing={listing} />
+      <ListingEditForm listing={listingOrdered} deleteRedirectHref="/admin" />
     </div>
   );
 }

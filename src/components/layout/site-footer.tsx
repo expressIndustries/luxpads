@@ -48,6 +48,9 @@ export function SiteFooter() {
             >
               Sample Lease
             </a>
+            <Link href="/owners/short-term-rental-tax" className="block hover:text-stone-900">
+              Short-term rental tax basics
+            </Link>
           </div>
         </div>
         <p className="mt-10 text-xs leading-relaxed text-stone-500">

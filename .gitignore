@@ -37,6 +37,9 @@ yarn-error.log*
 # local uploads
 /public/uploads
 
+# local DB snapshots (db:backup)
+/backups/
+
 # vercel
 .vercel
 
