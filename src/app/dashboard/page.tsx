@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { clsx } from "clsx";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { MessageSender } from "@prisma/client";
+import { UnreadMessagesIcon } from "@/components/dashboard/unread-messages-icon";
+import { countOwnerUnreadGuestMessages } from "@/lib/queries/owner-unread-messages";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +14,10 @@ export default async function DashboardHomePage() {
   const [listingCount, conversationCount, unreadGuestMessages] = await Promise.all([
     prisma.listing.count({ where: { ownerId: session.user.id } }),
     prisma.conversation.count({ where: { ownerId: session.user.id } }),
-    prisma.message.count({
-      where: {
-        senderRole: MessageSender.renter,
-        readByOwnerAt: null,
-        conversation: { ownerId: session.user.id },
-      },
-    }),
+    countOwnerUnreadGuestMessages(session.user.id),
   ]);
+
+  const hasUnread = unreadGuestMessages > 0;
 
   return (
     <div className="space-y-8">
@@ -44,8 +42,15 @@ export default async function DashboardHomePage() {
         </Link>
         <Link
           href="/dashboard/messages"
-          className="inline-flex rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-medium text-stone-900 hover:border-stone-300"
+          aria-label={hasUnread ? `Open messages, ${unreadGuestMessages} unread from guests` : "Open messages"}
+          className={clsx(
+            "inline-flex items-center gap-2 rounded-full border bg-white px-5 py-2.5 text-sm font-medium text-stone-900 hover:border-stone-300",
+            hasUnread
+              ? "border-amber-300 bg-amber-50/60 ring-1 ring-amber-200/70"
+              : "border-stone-200",
+          )}
         >
+          {hasUnread ? <UnreadMessagesIcon /> : null}
           Open messages
         </Link>
         <Link
