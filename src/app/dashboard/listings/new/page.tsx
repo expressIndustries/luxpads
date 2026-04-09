@@ -6,5 +6,6 @@ export default async function NewListingPage() {
   if ("error" in res) {
     redirect("/dashboard/listings");
   }
-  redirect(`/dashboard/listings/${res.id}/edit`);
+  const first = res.is_first_listing ? "1" : "0";
+  redirect(`/dashboard/listings/${res.id}/edit?owner_listing_created=1&first=${first}`);
 }

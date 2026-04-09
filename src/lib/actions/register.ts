@@ -4,6 +4,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { getRequestIp, verifyTurnstileToken } from "@/lib/turnstile-verify";
 
 const schema = z.object({
   email: z.string().email(),
@@ -14,6 +15,12 @@ const schema = z.object({
 export type RegisterState = { error?: string; ok?: boolean };
 
 export async function registerUser(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
+  const ip = await getRequestIp();
+  const ts = await verifyTurnstileToken(String(formData.get("cf-turnstile-response") ?? ""), ip);
+  if (!ts.ok) {
+    return { error: ts.error };
+  }
+
   const parsed = schema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),

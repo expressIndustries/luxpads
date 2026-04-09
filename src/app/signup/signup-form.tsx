@@ -8,17 +8,26 @@ import { registerUser } from "@/lib/actions/register";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileField, turnstileConfigured } from "@/components/security/turnstile-field";
 
 export function SignupForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (turnstileConfigured() && !turnstileToken?.trim()) {
+      setError("Please complete the security check.");
+      return;
+    }
     setPending(true);
     const fd = new FormData(e.currentTarget);
+    if (turnstileToken?.trim()) {
+      fd.set("cf-turnstile-response", turnstileToken);
+    }
     const res = await registerUser({}, fd);
     setPending(false);
     if (res.error) {
@@ -54,6 +63,7 @@ export function SignupForm() {
       <p className="text-xs text-stone-600">
         Signing up is free. You can browse, inquire, and publish listings as soon as your account is created.
       </p>
+      <TurnstileField action="signup" onToken={setTurnstileToken} />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Creating…" : "Create account"}

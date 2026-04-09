@@ -27,9 +27,12 @@ async function requireOwnerOrAdmin(): Promise<{ userId: string; isAdmin: boolean
   return { userId: session.user.id, isAdmin: role === "admin" };
 }
 
-export async function createDraftListing(): Promise<{ id: string } | { error: string }> {
+export async function createDraftListing(): Promise<
+  { id: string; is_first_listing: boolean } | { error: string }
+> {
   try {
     const ownerId = await requireOwner();
+    const existingCount = await prisma.listing.count({ where: { ownerId } });
     const slug = `draft-${randomUUID().slice(0, 10)}`;
     const listing = await prisma.listing.create({
       data: {
@@ -54,7 +57,7 @@ export async function createDraftListing(): Promise<{ id: string } | { error: st
       },
     });
     revalidatePath("/dashboard/listings");
-    return { id: listing.id };
+    return { id: listing.id, is_first_listing: existingCount === 0 };
   } catch {
     return { error: "Could not create listing." };
   }

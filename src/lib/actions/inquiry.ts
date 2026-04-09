@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { MessageSender } from "@prisma/client";
 import { normalizeRenterEmail } from "@/lib/messaging";
 import { generateMailThreadToken } from "@/lib/mailgun/thread-token";
+import { getRequestIp, verifyTurnstileToken } from "@/lib/turnstile-verify";
 
 const schema = z.object({
   listingSlug: z.string().min(1),
@@ -21,9 +22,15 @@ const schema = z.object({
   website: z.string().max(0).optional(),
 });
 
-export type InquiryState = { error?: string; ok?: boolean };
+export type InquiryState = { error?: string; ok?: boolean; is_new_thread?: boolean };
 
 export async function submitInquiry(_prev: InquiryState, formData: FormData): Promise<InquiryState> {
+  const ip = await getRequestIp();
+  const ts = await verifyTurnstileToken(String(formData.get("cf-turnstile-response") ?? ""), ip);
+  if (!ts.ok) {
+    return { error: ts.error };
+  }
+
   const parsed = schema.safeParse({
     listingSlug: formData.get("listingSlug"),
     renterName: formData.get("renterName"),
@@ -99,6 +106,8 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
       conversationId: existing.id,
       mailThreadToken: existing.mailThreadToken,
     });
+
+    return { ok: true, is_new_thread: false };
   } else {
     const conv = await prisma.conversation.create({
       data: {
@@ -131,5 +140,5 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
     });
   }
 
-  return { ok: true };
+  return { ok: true, is_new_thread: true };
 }

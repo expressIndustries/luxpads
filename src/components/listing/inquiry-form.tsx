@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { submitInquiry, type InquiryState } from "@/lib/actions/inquiry";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MarketplaceDisclaimer } from "@/components/marketplace-disclaimer";
+import { TurnstileField, turnstileConfigured } from "@/components/security/turnstile-field";
+import { gaEvent } from "@/lib/gtag";
 
 const initial: InquiryState = {};
 
@@ -21,6 +24,18 @@ function SubmitRow() {
 
 export function InquiryForm({ listingSlug }: { listingSlug: string }) {
   const [state, formAction] = useFormState(submitInquiry, initial);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
+  const inquiryTracked = useRef(false);
+
+  useEffect(() => {
+    if (!state.ok || inquiryTracked.current) return;
+    inquiryTracked.current = true;
+    gaEvent("renter_inquiry_sent", {
+      listing_slug: listingSlug,
+      is_new_thread: state.is_new_thread ?? true,
+    });
+  }, [state.ok, state.is_new_thread, listingSlug]);
 
   if (state.ok) {
     return (
@@ -35,10 +50,25 @@ export function InquiryForm({ listingSlug }: { listingSlug: string }) {
     );
   }
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setClientError(null);
+    if (turnstileConfigured() && !turnstileToken?.trim()) {
+      setClientError("Please complete the security check.");
+      return;
+    }
+    const fd = new FormData(e.currentTarget);
+    fd.set("listingSlug", listingSlug);
+    if (turnstileToken?.trim()) {
+      fd.set("cf-turnstile-response", turnstileToken);
+    }
+    formAction(fd);
+  }
+
   return (
     <div className="space-y-6">
       <MarketplaceDisclaimer />
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input type="hidden" name="listingSlug" value={listingSlug} />
         <div className="hidden" aria-hidden>
           <label>
@@ -86,6 +116,8 @@ export function InquiryForm({ listingSlug }: { listingSlug: string }) {
             placeholder="Share dates, purpose of stay, and any screening details the homeowner should know."
           />
         </div>
+        <TurnstileField action="listing_inquiry" onToken={setTurnstileToken} />
+        {clientError ? <p className="text-sm text-red-600">{clientError}</p> : null}
         {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
         <SubmitRow />
       </form>
