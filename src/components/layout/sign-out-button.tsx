@@ -10,8 +10,8 @@ export function SignOutButton() {
       variant="primary"
       className="!px-4 !py-2 text-sm"
       onClick={() => {
-        const origin = typeof window !== "undefined" ? window.location.origin : "";
-        void signOut({ callbackUrl: origin ? `${origin}/` : "/" });
+        // Relative path; auth `redirect` callback resolves against AUTH_URL / NEXT_PUBLIC_APP_URL when set
+        void signOut({ callbackUrl: "/" });
       }}
     >
       Sign out

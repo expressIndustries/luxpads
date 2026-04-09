@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { AppProviders } from "@/components/providers/app-providers";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { siteCopy } from "@/lib/constants";
 import { getMetadataBase } from "@/lib/metadata-base";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${sans.variable} h-full`}>
       <body className="flex min-h-full flex-col bg-[#faf9f7] font-sans text-stone-900 antialiased">
+        <GoogleAnalytics />
         <AppProviders>
           <ImpersonationBanner />
           <SiteHeader />

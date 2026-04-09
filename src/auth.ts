@@ -10,6 +10,20 @@ const credentialsSchema = z.object({
   password: z.string().min(8),
 });
 
+/** Public site origin for redirects. Fixes sign-out/login landing on localhost when the app sees Host as 127.0.0.1:3000 behind Docker/proxy. */
+function authCanonicalBaseUrl(): string | null {
+  const raw =
+    process.env.AUTH_URL?.trim() ||
+    process.env.NEXTAUTH_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) return null;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
@@ -41,6 +55,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    redirect({ url, baseUrl }) {
+      const canonical = authCanonicalBaseUrl();
+      const effectiveBase = canonical ?? baseUrl;
+
+      if (url.startsWith("/")) {
+        return `${effectiveBase}${url}`;
+      }
+      try {
+        const target = new URL(url);
+        const base = new URL(effectiveBase);
+        if (target.origin === base.origin) {
+          return url;
+        }
+      } catch {
+        /* invalid URL */
+      }
+      return effectiveBase;
+    },
     async jwt({ token, user, trigger, session }) {
       if (user) {
         const u = user as { id: string; email: string; name?: string | null; role: Role };
