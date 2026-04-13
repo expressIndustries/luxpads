@@ -1,10 +1,6 @@
 import { sendMail } from "@/lib/email";
 import { getMailgunEnv } from "@/lib/mailgun/config";
-
-function appBaseUrl(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
-  return base || "http://localhost:3000";
-}
+import { publicOriginForServer } from "@/lib/seo";
 
 function noreplyReplyTo(): string {
   const domain = getMailgunEnv()?.domain ?? process.env.MAILGUN_DOMAIN?.trim() ?? "mail.luxpads.co";
@@ -15,7 +11,7 @@ export async function sendEmailVerificationMessage(params: {
   to: string;
   rawToken: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const verifyUrl = `${appBaseUrl()}/api/verify-email?token=${encodeURIComponent(params.rawToken)}`;
+  const verifyUrl = `${publicOriginForServer()}/api/verify-email?token=${encodeURIComponent(params.rawToken)}`;
   const res = await sendMail({
     to: params.to,
     subject: "Confirm your email for LuxPads",

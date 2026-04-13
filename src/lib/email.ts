@@ -1,6 +1,7 @@
 import { getMailgunEnv } from "@/lib/mailgun/config";
 import { replyToAddress } from "@/lib/mailgun/reply-address";
 import { sendViaMailgun } from "@/lib/mailgun/send-message";
+import { publicOriginForServer } from "@/lib/seo";
 
 type MailPayload = {
   to: string;
@@ -10,11 +11,6 @@ type MailPayload = {
   /** Required for LuxPads thread mail (Mailgun relay). */
   replyTo: string;
 };
-
-function appBaseUrl(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
-  return base || "http://localhost:3000";
-}
 
 /**
  * Deliver transactional mail. Prefers Mailgun when MAILGUN_API_KEY is set.
@@ -80,7 +76,7 @@ export async function notifyOwnerOfNewConversation(params: {
   conversationId: string;
   mailThreadToken: string;
 }) {
-  const link = `${appBaseUrl()}/dashboard/messages/${params.conversationId}`;
+  const link = `${publicOriginForServer()}/dashboard/messages/${params.conversationId}`;
   const replyTo = threadReplyTo(params.mailThreadToken);
   return sendMail({
     to: params.ownerEmail,
@@ -107,7 +103,7 @@ export async function notifyOwnerOfRenterMessage(params: {
   conversationId: string;
   mailThreadToken: string;
 }) {
-  const link = `${appBaseUrl()}/dashboard/messages/${params.conversationId}`;
+  const link = `${publicOriginForServer()}/dashboard/messages/${params.conversationId}`;
   const replyTo = threadReplyTo(params.mailThreadToken);
   return sendMail({
     to: params.ownerEmail,
@@ -133,7 +129,7 @@ export async function notifyRenterOfOwnerMessage(params: {
   conversationId: string;
   mailThreadToken: string;
 }) {
-  const link = `${appBaseUrl()}/account/messages/${params.conversationId}`;
+  const link = `${publicOriginForServer()}/account/messages/${params.conversationId}`;
   const replyTo = threadReplyTo(params.mailThreadToken);
   return sendMail({
     to: params.renterEmail,

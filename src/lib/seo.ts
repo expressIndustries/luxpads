@@ -1,16 +1,42 @@
 import { siteCopy } from "@/lib/constants";
 import { formatMoney } from "@/lib/utils";
 
+function tryPublicOrigin(raw?: string | null): string | null {
+  const t = raw?.trim();
+  if (!t) return null;
+  try {
+    return new URL(t).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Origin for absolute URLs in server-sent email (verify link, message links). Resolves even when
+ * `NEXT_PUBLIC_APP_URL` was missing at build time but `AUTH_URL` is set in the container.
+ * Production: never falls back to localhost (uses `siteCopy.domainUrl` after env vars).
+ */
+export function publicOriginForServer(): string {
+  const vercel = process.env.VERCEL_URL?.trim();
+  const fromEnv =
+    tryPublicOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    tryPublicOrigin(process.env.AUTH_URL) ||
+    tryPublicOrigin(process.env.NEXTAUTH_URL) ||
+    (vercel ? tryPublicOrigin(`https://${vercel}`) : null);
+
+  if (fromEnv) return fromEnv;
+
+  if (process.env.NODE_ENV === "development") {
+    return "http://localhost:3000";
+  }
+
+  return siteCopy.domainUrl.replace(/\/$/, "");
+}
+
 /** Canonical site origin for links in metadata & JSON-LD (prefers `NEXT_PUBLIC_APP_URL`, else production domain). */
 export function siteOrigin(): string {
-  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (raw) {
-    try {
-      return new URL(raw).origin;
-    } catch {
-      /* fall through */
-    }
-  }
+  const fromEnv = tryPublicOrigin(process.env.NEXT_PUBLIC_APP_URL);
+  if (fromEnv) return fromEnv;
   return siteCopy.domainUrl.replace(/\/$/, "");
 }
 
