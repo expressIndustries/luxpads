@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { auth } from "@/auth";
-import { siteCopy } from "@/lib/constants";
+import { UnreadMessagesIcon } from "@/components/dashboard/unread-messages-icon";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { siteCopy } from "@/lib/constants";
+import { countRenterUnreadOwnerMessages } from "@/lib/queries/renter-unread-messages";
 
 const nav = [
   { href: "/search", label: "Explore" },
@@ -12,6 +14,11 @@ const nav = [
 export async function SiteHeader() {
   const session = await auth();
   const role = session?.user?.role;
+
+  const renterUnread =
+    role === "renter" && session?.user?.id && session.user.email
+      ? await countRenterUnreadOwnerMessages(session.user.id, session.user.email)
+      : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#faf9f7]/90 backdrop-blur-md">
@@ -44,9 +51,13 @@ export async function SiteHeader() {
               </Link>
               <Link
                 href="/account/messages"
-                className="hidden rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-800 transition hover:border-stone-300 sm:inline-block"
+                aria-label={
+                  renterUnread > 0 ? `Messages, ${renterUnread} unread from owners` : "Messages"
+                }
+                className="hidden items-center gap-2 rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-800 transition hover:border-stone-300 sm:inline-flex"
               >
-                Messages
+                {renterUnread > 0 ? <UnreadMessagesIcon className="text-amber-600" /> : null}
+                <span>Messages</span>
               </Link>
             </>
           ) : null}

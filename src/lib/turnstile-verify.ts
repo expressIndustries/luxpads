@@ -25,6 +25,7 @@ export async function verifyTurnstileToken(
   }
   const t = typeof token === "string" ? token.trim() : "";
   if (!t) {
+    console.error("[turnstile] missing_token", { hasSecret: Boolean(secret) });
     return { ok: false, error: "Please complete the security check." };
   }
 
@@ -43,8 +44,18 @@ export async function verifyTurnstileToken(
     if (data.success === true) {
       return { ok: true };
     }
+    const errorCodes = Array.isArray(data["error-codes"]) ? data["error-codes"] : [];
+    console.error("[turnstile] siteverify_failed", {
+      success: data.success,
+      errorCodes,
+      httpStatus: res.status,
+      remoteipPresent: Boolean(remoteip),
+    });
     return { ok: false, error: "Security check failed. Please try again." };
-  } catch {
+  } catch (e) {
+    console.error("[turnstile] siteverify_exception", {
+      message: e instanceof Error ? e.message : String(e),
+    });
     return { ok: false, error: "Security check failed. Please try again." };
   }
 }

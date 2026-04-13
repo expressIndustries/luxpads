@@ -1,6 +1,6 @@
 import { clsx } from "clsx";
 
-/** Bell + dot for “you have unread guest messages” in owner dashboard nav. */
+/** Bell + red dot for unread messages (owner: guest messages; renter: owner replies). */
 export function UnreadMessagesIcon({ className }: { className?: string }) {
   return (
     <span className={clsx("relative inline-flex shrink-0 text-amber-600", className)} aria-hidden>

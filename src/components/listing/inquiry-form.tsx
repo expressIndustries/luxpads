@@ -1,5 +1,6 @@
 "use client";
 
+import { addDays, endOfMonth, format, isBefore } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { submitInquiry, type InquiryState } from "@/lib/actions/inquiry";
@@ -12,6 +13,34 @@ import { TurnstileField, turnstileConfigured } from "@/components/security/turns
 import { gaEvent } from "@/lib/gtag";
 
 const initial: InquiryState = {};
+
+function parseLocalYmd(s: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  const dt = new Date(y, mo, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) return null;
+  return dt;
+}
+
+/** Move checkout into check-in’s calendar month, keeping day-of-month when valid; ensure checkout is not before check-in. */
+function alignCheckOutToCheckInMonth(checkInStr: string, checkOutStr: string): string {
+  const cin = parseLocalYmd(checkInStr);
+  const cout = parseLocalYmd(checkOutStr);
+  if (!cin || !cout) return checkOutStr;
+
+  const y = cin.getFullYear();
+  const m = cin.getMonth();
+  const lastDom = endOfMonth(cin).getDate();
+  const targetDom = Math.min(cout.getDate(), lastDom);
+  let next = new Date(y, m, targetDom);
+  if (isBefore(next, cin)) {
+    next = addDays(cin, 1);
+  }
+  return format(next, "yyyy-MM-dd");
+}
 
 function SubmitRow() {
   const { pending } = useFormStatus();
@@ -39,6 +68,8 @@ export function InquiryForm({
   const [state, formAction] = useFormState(submitInquiry, initial);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const inquiryTracked = useRef(false);
 
   useEffect(() => {
@@ -105,11 +136,28 @@ export function InquiryForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="checkIn">Check-in</Label>
-            <Input id="checkIn" name="checkIn" type="date" />
+            <Input
+              id="checkIn"
+              name="checkIn"
+              type="date"
+              value={checkIn}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCheckIn(v);
+                setCheckOut((prev) => (v && prev ? alignCheckOutToCheckInMonth(v, prev) : prev));
+              }}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="checkOut">Check-out</Label>
-            <Input id="checkOut" name="checkOut" type="date" />
+            <Input
+              id="checkOut"
+              name="checkOut"
+              type="date"
+              value={checkOut}
+              min={checkIn || undefined}
+              onChange={(e) => setCheckOut(e.target.value)}
+            />
           </div>
         </div>
         <div className="space-y-2">
