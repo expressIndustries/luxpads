@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -26,6 +26,13 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
   const callbackUrl = safeInternalPath(searchParams.get("callbackUrl"));
   const contactFlow = fromContact || searchParams.get("contact") === "1";
   const accountType = contactFlow ? "renter" : "owner";
+  const checkEmail = searchParams.get("checkEmail") === "1";
+
+  useEffect(() => {
+    if (checkEmail) {
+      window.scrollTo(0, 0);
+    }
+  }, [checkEmail]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,12 +52,21 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
       setError(res.error);
       return;
     }
-    const email = String(fd.get("email") ?? "");
-    const password = String(fd.get("password") ?? "");
     gaEvent("sign_up", {
       method: "email",
       flow: contactFlow ? "contact_owner" : "organic",
     });
+
+    if (res.emailVerificationSent) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("checkEmail", "1");
+      router.replace(`/signup?${params.toString()}`);
+      router.refresh();
+      return;
+    }
+
+    const email = String(fd.get("email") ?? "");
+    const password = String(fd.get("password") ?? "");
     const sign = await signIn("credentials", { email, password, redirect: false });
     if (sign?.error) {
       setError("Account created but sign-in failed. Try logging in.");
@@ -58,6 +74,41 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
     }
     router.push(callbackUrl);
     router.refresh();
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border-2 border-emerald-300/80 bg-emerald-50 px-5 py-6 text-center shadow-sm">
+          <p className="font-serif text-xl font-semibold text-emerald-950">Confirmation email sent!</p>
+          <p className="mt-3 text-sm leading-relaxed text-emerald-900">
+            Open the link we sent to your inbox to confirm your address and sign in automatically. If you do not see
+            it, check your spam folder.
+          </p>
+        </div>
+        <p className="text-center text-sm text-stone-600">
+          Wrong email or need to start over?{" "}
+          <Link
+            href={`/signup?${new URLSearchParams({
+              ...(contactFlow ? { contact: "1" } : {}),
+              callbackUrl,
+            }).toString()}`}
+            className="font-medium text-stone-900 underline decoration-stone-300 underline-offset-4"
+          >
+            Back to sign up
+          </Link>
+        </p>
+        <p className="text-center text-sm text-stone-600">
+          Already confirmed?{" "}
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            className="font-medium text-stone-900 underline decoration-stone-300 underline-offset-4"
+          >
+            Log in
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -80,7 +131,7 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
       <p className="text-xs text-stone-600">
         {contactFlow
           ? "We will email you a confirmation link before you can contact the owner."
-          : "Signing up is free. When email delivery is enabled, we send a quick confirmation link before you can message owners."}
+          : "Signing up is free. We send a quick confirmation link before you can message owners."}
       </p>
       <TurnstileField action="signup" onToken={setTurnstileToken} />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

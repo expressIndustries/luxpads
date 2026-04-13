@@ -12,6 +12,8 @@ const verifyMessages: Record<string, string> = {
   expired: "That confirmation link has expired. Sign in and use “Resend confirmation email” on the listing.",
   invalid: "That confirmation link is not valid. Try signing up again or resend from the listing page.",
   missing: "Missing confirmation link. Open the link from your email, or sign in and resend the confirmation.",
+  session:
+    "We could not finish signing you in from that link. Sign in with your password below, or open the confirmation link from your email again.",
 };
 
 function safeCallbackPath(raw: string): string {

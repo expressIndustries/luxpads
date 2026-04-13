@@ -14,19 +14,22 @@ export const metadata: Metadata = {
   },
 };
 
-type Props = { searchParams: Promise<{ contact?: string; callbackUrl?: string }> };
+type Props = { searchParams: Promise<{ contact?: string; callbackUrl?: string; checkEmail?: string }> };
 
 export default async function SignupPage({ searchParams }: Props) {
   const sp = await searchParams;
   const fromContact = sp.contact === "1";
+  const checkEmail = sp.checkEmail === "1";
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center px-4 py-16">
-      <h1 className="font-serif text-3xl text-stone-900">Join LuxPads</h1>
+      <h1 className="font-serif text-3xl text-stone-900">{checkEmail ? "Check your email" : "Join LuxPads"}</h1>
       <p className="mt-2 text-sm text-stone-600">
-        {fromContact
-          ? "Create an account to contact this homeowner. You will confirm your email before your message is sent."
-          : "One free account: explore listings, send inquiries, and publish your own home when you are ready."}
+        {checkEmail
+          ? "You are one step away—use the link in the email we sent to finish confirming your account."
+          : fromContact
+            ? "Create an account to contact this homeowner. You will confirm your email before your message is sent."
+            : "One free account: explore listings, send inquiries, and publish your own home when you are ready."}
       </p>
       <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
         <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>

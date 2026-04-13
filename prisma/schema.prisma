@@ -57,6 +57,7 @@ model User {
   favorites              Favorite[]
   adminActions   AdminAction[]   @relation("AdminActions")
   emailVerificationTokens EmailVerificationToken[]
+  postVerifyLoginTokens   PostVerifyLoginToken[]
 }
 
 /// One-time link to confirm email after signup (Mailgun outbound).
@@ -69,6 +70,18 @@ model EmailVerificationToken {
   /// Path-only redirect after success (e.g. /listing/my-slug), validated in verify route.
   redirectPath String?  @db.VarChar(512)
   createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// One-time token to establish a session immediately after clicking the email verification link (no password re-entry).
+model PostVerifyLoginToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }

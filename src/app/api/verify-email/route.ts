@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { consumeEmailVerificationToken, sanitizeEmailVerificationRedirect } from "@/lib/email-verification";
+import {
+  consumeEmailVerificationToken,
+  createPostVerifyLoginToken,
+  sanitizeEmailVerificationRedirect,
+} from "@/lib/email-verification";
 import { publicOriginForServer } from "@/lib/seo";
 
 export async function GET(request: Request) {
@@ -19,10 +23,20 @@ export async function GET(request: Request) {
   }
 
   const path = sanitizeEmailVerificationRedirect(result.redirectPath ?? nextParam);
-  const dest = new URL(path, publicBase);
-  dest.searchParams.set("email_verified", "1");
-  if (path.startsWith("/listing/")) {
-    dest.searchParams.set("contact_flow", "1");
-  }
-  return NextResponse.redirect(dest);
+  const rawLogin = await createPostVerifyLoginToken(result.userId);
+
+  const handoff = new URL("/auth/post-verify", publicBase);
+  handoff.searchParams.set("next", path);
+
+  const res = NextResponse.redirect(handoff);
+  res.cookies.set({
+    name: "luxpads_post_verify",
+    value: rawLogin,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 300,
+    path: "/auth/post-verify",
+  });
+  return res;
 }

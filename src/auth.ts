@@ -4,6 +4,7 @@ import { compare } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { consumePostVerifyLoginToken } from "@/lib/email-verification";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -36,8 +37,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        postVerifyToken: { label: "Post verify", type: "text" },
       },
       async authorize(raw) {
+        const postToken =
+          raw && typeof raw === "object" && "postVerifyToken" in raw
+            ? String((raw as { postVerifyToken?: unknown }).postVerifyToken ?? "").trim()
+            : "";
+        if (postToken.length > 0) {
+          const u = await consumePostVerifyLoginToken(postToken);
+          if (!u) return null;
+          return {
+            id: u.id,
+            email: u.email,
+            name: u.name ?? undefined,
+            role: u.role,
+          };
+        }
+
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
         const { email, password } = parsed.data;
