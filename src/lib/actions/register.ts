@@ -16,7 +16,6 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(1).max(120),
-  accountType: z.enum(["owner", "renter"]),
   redirectPath: z.string().max(512).optional(),
 });
 
@@ -25,6 +24,8 @@ export type RegisterState = {
   ok?: boolean;
   /** True when Mailgun is configured and a confirmation link was emailed. */
   emailVerificationSent?: boolean;
+  /** After sign-in (no verification email), client navigates here — usually `/welcome` with optional `dest`. */
+  postSignupPath?: string;
 };
 
 export async function registerUser(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
@@ -38,13 +39,12 @@ export async function registerUser(_prev: RegisterState, formData: FormData): Pr
     email: formData.get("email"),
     password: formData.get("password"),
     name: formData.get("name"),
-    accountType: formData.get("accountType") ?? "owner",
     redirectPath: formData.get("redirectPath") || undefined,
   });
   if (!parsed.success) {
     return { error: "Please check your details and try again." };
   }
-  const { email, password, name, accountType } = parsed.data;
+  const { email, password, name } = parsed.data;
   const redirectPath = sanitizeEmailVerificationRedirect(parsed.data.redirectPath ?? null);
 
   const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -55,32 +55,15 @@ export async function registerUser(_prev: RegisterState, formData: FormData): Pr
   const enforced = isEmailVerificationEnforced();
   const emailVerified = enforced ? null : new Date();
 
-  const user =
-    accountType === "owner"
-      ? await prisma.user.create({
-          data: {
-            email: email.toLowerCase(),
-            passwordHash,
-            name,
-            role: Role.owner,
-            emailVerified,
-            ownerProfile: {
-              create: {
-                displayName: name,
-                contactEmail: email.toLowerCase(),
-              },
-            },
-          },
-        })
-      : await prisma.user.create({
-          data: {
-            email: email.toLowerCase(),
-            passwordHash,
-            name,
-            role: Role.renter,
-            emailVerified,
-          },
-        });
+  const user = await prisma.user.create({
+    data: {
+      email: email.toLowerCase(),
+      passwordHash,
+      name,
+      role: Role.renter,
+      emailVerified,
+    },
+  });
 
   if (enforced) {
     const { rawToken } = await createEmailVerificationToken({
@@ -98,5 +81,9 @@ export async function registerUser(_prev: RegisterState, formData: FormData): Pr
     return { ok: true, emailVerificationSent: true };
   }
 
-  return { ok: true, emailVerificationSent: false };
+  let postSignupPath = "/welcome";
+  if (redirectPath.startsWith("/listing/")) {
+    postSignupPath = `/welcome?dest=${encodeURIComponent(redirectPath)}`;
+  }
+  return { ok: true, emailVerificationSent: false, postSignupPath };
 }

@@ -178,6 +178,7 @@ async function ensureSampleOwnerId(): Promise<string> {
       name: "Sample Listings Owner",
       role: Role.owner,
       emailVerified: new Date(),
+      welcomeCompletedAt: new Date(),
       ownerProfile: {
         create: {
           displayName: "LuxPads Sample Homes",

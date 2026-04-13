@@ -34,8 +34,16 @@ export default auth((req) => {
       return Response.redirect(url);
     }
   }
+
+  if (pathname.startsWith("/welcome")) {
+    if (!session?.user) {
+      const url = new URL("/login", req.nextUrl.origin);
+      url.searchParams.set("callbackUrl", pathname);
+      return Response.redirect(url);
+    }
+  }
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/account", "/account/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/account", "/account/:path*", "/welcome"],
 };

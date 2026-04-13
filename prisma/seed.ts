@@ -60,6 +60,7 @@ async function main() {
       name: "LuxPads Admin",
       role: Role.admin,
       emailVerified: new Date(),
+      welcomeCompletedAt: new Date(),
     },
   });
 
@@ -70,6 +71,7 @@ async function main() {
       name: "Elena Whitmore",
       role: Role.owner,
       emailVerified: new Date(),
+      welcomeCompletedAt: new Date(),
       phone: "+1 310 555 0142",
       ownerProfile: {
         create: {
@@ -90,6 +92,7 @@ async function main() {
       name: "Marcus Chen",
       role: Role.owner,
       emailVerified: new Date(),
+      welcomeCompletedAt: new Date(),
       ownerProfile: {
         create: {
           displayName: "Chen Collective",
@@ -108,6 +111,7 @@ async function main() {
       name: "Sofia Navarro",
       role: Role.owner,
       emailVerified: new Date(),
+      welcomeCompletedAt: new Date(),
       ownerProfile: {
         create: {
           displayName: "Navarro Villas",
@@ -126,6 +130,7 @@ async function main() {
       name: "Jordan Lee",
       role: Role.renter,
       emailVerified: new Date(),
+      welcomeCompletedAt: new Date(),
     },
   });
 

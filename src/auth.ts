@@ -137,6 +137,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
 
+      // Keep JWT role in sync with DB so middleware (edge) matches RSC after welcome / role changes.
+      if (token.sub) {
+        const row = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true, suspended: true },
+        });
+        if (row && !row.suspended) {
+          token.role = row.role;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import {
+  buildEmailVerifiedRelativePath,
   consumeEmailVerificationToken,
   createPostVerifyLoginToken,
   sanitizeEmailVerificationRedirect,
 } from "@/lib/email-verification";
 import { publicOriginForServer } from "@/lib/seo";
+import { POST_VERIFY_COOKIE } from "@/lib/verify-handoff-handler";
 
-const COOKIE = "luxpads_post_verify";
+/** Primary handoff URL; `/auth/post-verify` remains supported for older links. */
+const HANDOFF_URL_PATH = "/api/verify-callback";
 
 /**
  * Consumes the email verification token, marks the user verified, then either
- * hands off to post-verify (auto sign-in) or sends the user to login if that step fails.
+ * hands off to verify-callback (auto sign-in) or sends the user to login if that step fails.
  */
 export async function respondToEmailVerificationRequest(
   tokenRaw: string | null | undefined,
@@ -31,7 +35,24 @@ export async function respondToEmailVerificationRequest(
     return NextResponse.redirect(new URL(`/login?verify=${q}`, publicBase));
   }
 
-  const path = sanitizeEmailVerificationRedirect(result.redirectPath ?? nextParam ?? null);
+  const fallback = sanitizeEmailVerificationRedirect(result.redirectPath ?? nextParam ?? null);
+
+  const urow = await prisma.user.findUnique({
+    where: { id: result.userId },
+    select: { welcomeCompletedAt: true },
+  });
+
+  let nextPath: string;
+  if (!urow?.welcomeCompletedAt) {
+    const u = new URL("/welcome", "https://placeholder.invalid");
+    u.searchParams.set("email_verified", "1");
+    if (fallback.startsWith("/listing/")) {
+      u.searchParams.set("dest", fallback);
+    }
+    nextPath = `${u.pathname}${u.search}`;
+  } else {
+    nextPath = buildEmailVerifiedRelativePath(fallback);
+  }
 
   let rawLogin: string;
   try {
@@ -42,18 +63,19 @@ export async function respondToEmailVerificationRequest(
     return NextResponse.redirect(dest);
   }
 
-  const handoff = new URL("/auth/post-verify", publicBase);
-  handoff.searchParams.set("next", path);
+  const handoff = new URL(HANDOFF_URL_PATH, publicBase);
+  handoff.searchParams.set("next", nextPath);
 
   const res = NextResponse.redirect(handoff);
+  // path: '/' so the cookie is also sent to legacy `/auth/post-verify` redirects (avoids silent login failure + 405 confusion).
   res.cookies.set({
-    name: COOKIE,
+    name: POST_VERIFY_COOKIE,
     value: rawLogin,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 300,
-    path: "/auth/post-verify",
+    path: "/",
   });
   return res;
 }

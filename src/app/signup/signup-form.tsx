@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerUser } from "@/lib/actions/register";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,11 @@ import { TurnstileField, turnstileConfigured } from "@/components/security/turns
 import { gaEvent } from "@/lib/gtag";
 
 function safeInternalPath(raw: string | null): string {
-  if (!raw?.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  if (!raw?.startsWith("/") || raw.startsWith("//")) return "/";
   return raw;
 }
 
 export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -25,7 +24,6 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
 
   const callbackUrl = safeInternalPath(searchParams.get("callbackUrl"));
   const contactFlow = fromContact || searchParams.get("contact") === "1";
-  const accountType = contactFlow ? "renter" : "owner";
   const checkEmail = searchParams.get("checkEmail") === "1";
   const turnstileRequired = turnstileConfigured();
 
@@ -72,8 +70,8 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
       setError("Account created but sign-in failed. Try logging in.");
       return;
     }
-    router.push(callbackUrl);
-    router.refresh();
+    const next = res.postSignupPath ?? "/welcome";
+    window.location.assign(next);
   }
 
   if (checkEmail) {
@@ -113,7 +111,6 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <input type="hidden" name="accountType" value={accountType} />
       <input type="hidden" name="redirectPath" value={callbackUrl} />
       <div className="space-y-2">
         <Label htmlFor="name">Full name</Label>
@@ -130,8 +127,8 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
       </div>
       <p className="text-xs text-stone-600">
         {contactFlow
-          ? "We will email you a confirmation link before you can contact the owner."
-          : "Signing up is free. We send a quick confirmation link before you can message owners."}
+          ? "We will email you a confirmation link before you can contact the owner. After that, you will choose renter or owner."
+          : "Signing up is free. We email a confirmation link; once you open it, you will sign in and choose how you use LuxPads (guest or host)."}
       </p>
       <TurnstileField action="signup" onToken={setTurnstileToken} />
       {turnstileRequired ? (

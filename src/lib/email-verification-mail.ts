@@ -11,7 +11,7 @@ export async function sendEmailVerificationMessage(params: {
   to: string;
   rawToken: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const verifyUrl = `${publicOriginForServer()}/auth/confirm-email?token=${encodeURIComponent(params.rawToken)}`;
+  const verifyUrl = `${publicOriginForServer()}/api/verify-email?token=${encodeURIComponent(params.rawToken)}`;
   const res = await sendMail({
     to: params.to,
     subject: "Confirm your email for LuxPads",

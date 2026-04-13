@@ -27,7 +27,11 @@ export function sanitizeEmailVerificationRedirect(raw: string | null | undefined
   if (!t.startsWith("/") || t.startsWith("//")) return "/account";
   if (t.includes("\n") || t.includes("\0") || t.includes("<")) return "/account";
   const ok =
-    t.startsWith("/listing/") || t.startsWith("/account") || t.startsWith("/dashboard") || t === "/";
+    t.startsWith("/listing/") ||
+    t.startsWith("/account") ||
+    t.startsWith("/dashboard") ||
+    t.startsWith("/welcome") ||
+    t === "/";
   if (!ok) return "/account";
   return t.slice(0, 512);
 }

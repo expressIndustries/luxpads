@@ -29,7 +29,7 @@ export default async function SignupPage({ searchParams }: Props) {
           ? "You are one step away—use the link in the email we sent to finish confirming your account."
           : fromContact
             ? "Create an account to contact this homeowner. You will confirm your email before your message is sent."
-            : "One free account: explore listings, send inquiries, and publish your own home when you are ready."}
+            : "One free account. After you confirm your email, you will pick guest or host—hosts can list a home."}
       </p>
       <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
         <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>

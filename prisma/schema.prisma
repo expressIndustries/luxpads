@@ -47,6 +47,8 @@ model User {
   phone         String?
   role          Role      @default(renter)
   suspended     Boolean   @default(false)
+  /// Set when the user finishes the owner/renter welcome step (or upgrades to owner later via the same flow).
+  welcomeCompletedAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

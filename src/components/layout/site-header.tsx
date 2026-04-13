@@ -35,12 +35,20 @@ export async function SiteHeader() {
         </nav>
         <div className="flex items-center gap-3">
           {role === "renter" ? (
-            <Link
-              href="/account/messages"
-              className="hidden rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-800 transition hover:border-stone-300 sm:inline-block"
-            >
-              Messages
-            </Link>
+            <>
+              <Link
+                href="/welcome?upgrade=1"
+                className="hidden rounded-full border border-amber-200 bg-amber-50/80 px-4 py-2 text-sm text-amber-950 transition hover:border-amber-300 sm:inline-block"
+              >
+                List your home
+              </Link>
+              <Link
+                href="/account/messages"
+                className="hidden rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-800 transition hover:border-stone-300 sm:inline-block"
+              >
+                Messages
+              </Link>
+            </>
           ) : null}
           {role === "owner" || role === "admin" ? (
             <>
