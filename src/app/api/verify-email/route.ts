@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { respondToEmailVerificationRequest } from "@/lib/email-verify-completion";
 import { publicOriginForServer } from "@/lib/seo";
 
 export const runtime = "nodejs";
@@ -10,14 +9,25 @@ function escapeHtmlAttr(s: string): string {
 }
 
 /**
- * In-browser POST bridge. Email scanners typically GET the link but do not submit this form,
- * so the one-time token is not consumed until the user's browser runs (or they use noscript).
+ * Legacy links used `?token=` on this API route. A GET still cannot consume the token (scanners).
+ * This response only runs JavaScript in a real browser to move the secret into a URL hash and open
+ * `/verify-email`, which POSTs to `/api/verify-email/complete`.
  */
-function verifyEmailAutoPostHtml(token: string, nextParam: string | null): string {
-  const nextStr = nextParam?.trim() || "";
-  const nextJs = nextStr ? JSON.stringify(nextStr) : "null";
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const token = searchParams.get("token")?.trim();
+  const next = searchParams.get("next")?.trim();
+  const publicBase = publicOriginForServer();
 
-  return `<!DOCTYPE html>
+  if (!token) {
+    return NextResponse.redirect(new URL("/login?verify=missing", publicBase));
+  }
+
+  const tokenJson = JSON.stringify(token);
+  const nextJson = next ? JSON.stringify(next) : "null";
+  const prefix = JSON.stringify(`${publicBase}/verify-email#`);
+
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -26,55 +36,24 @@ function verifyEmailAutoPostHtml(token: string, nextParam: string | null): strin
   <title>LuxPads — Confirm email</title>
 </head>
 <body>
-  <p>Confirming your email…</p>
+  <p>Continuing to email confirmation…</p>
   <noscript>
-    <p>Enable JavaScript or tap the button to finish.</p>
-    <form method="post" action="/api/verify-email">
-      <input type="hidden" name="token" value="${escapeHtmlAttr(token)}"/>
-      ${nextStr ? `<input type="hidden" name="next" value="${escapeHtmlAttr(nextStr)}"/>` : ""}
-      <button type="submit">Confirm email</button>
-    </form>
+    <p>JavaScript is required to confirm your email.
+    <a href="${escapeHtmlAttr(`${publicBase}/login?verify=missing`)}">Sign in</a> and resend the confirmation email if needed.</p>
   </noscript>
   <script>
 (function(){
-  var t=${JSON.stringify(token)};
-  var n=${nextJs};
-  var f=document.createElement("form");
-  f.method="POST";
-  f.action="/api/verify-email";
-  var a=document.createElement("input");
-  a.name="token";
-  a.value=t;
-  f.appendChild(a);
-  if(n){
-    var b=document.createElement("input");
-    b.name="next";
-    b.value=n;
-    f.appendChild(b);
-  }
-  document.body.appendChild(f);
-  f.submit();
+  var t=${tokenJson};
+  var n=${nextJson};
+  var sp=new URLSearchParams();
+  sp.set("t",t);
+  if(n){sp.set("n",n);}
+  location.replace(${prefix}+sp.toString());
 })();
   </script>
 </body>
 </html>`;
-}
 
-/**
- * Does NOT consume the token (GET is often prefetched by mail security scanners).
- * Returns HTML that POSTs to this same path, which performs verification.
- */
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token")?.trim();
-  const next = searchParams.get("next");
-  const publicBase = publicOriginForServer();
-
-  if (!token) {
-    return NextResponse.redirect(new URL("/login?verify=missing", publicBase));
-  }
-
-  const html = verifyEmailAutoPostHtml(token, next);
   return new NextResponse(html, {
     status: 200,
     headers: {
@@ -83,20 +62,4 @@ export async function GET(request: Request) {
       "X-Robots-Tag": "noindex, nofollow",
     },
   });
-}
-
-export async function POST(request: Request) {
-  const ct = request.headers.get("content-type") ?? "";
-  let token: string | null = null;
-  let next: string | null = null;
-
-  if (ct.includes("multipart/form-data") || ct.includes("application/x-www-form-urlencoded")) {
-    const fd = await request.formData();
-    const t = fd.get("token");
-    const n = fd.get("next");
-    token = typeof t === "string" ? t : null;
-    next = typeof n === "string" ? n : null;
-  }
-
-  return respondToEmailVerificationRequest(token, next);
 }

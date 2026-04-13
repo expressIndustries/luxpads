@@ -11,7 +11,8 @@ export async function sendEmailVerificationMessage(params: {
   to: string;
   rawToken: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const verifyUrl = `${publicOriginForServer()}/api/verify-email?token=${encodeURIComponent(params.rawToken)}`;
+  // Fragment is not sent on HTTP requests, so mail scanners cannot burn the token via GET.
+  const verifyUrl = `${publicOriginForServer()}/verify-email#t=${encodeURIComponent(params.rawToken)}`;
   const res = await sendMail({
     to: params.to,
     subject: "Confirm your email for LuxPads",
