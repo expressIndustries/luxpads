@@ -52,6 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: u.email,
             name: u.name ?? undefined,
             role: u.role,
+            emailVerified: true,
           };
         }
 
@@ -67,6 +68,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.name ?? undefined,
           role: user.role,
+          emailVerified: Boolean(user.emailVerified),
         };
       },
     }),
@@ -92,11 +94,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        const u = user as { id: string; email: string; name?: string | null; role: Role };
+        const u = user as {
+          id: string;
+          email: string;
+          name?: string | null;
+          role: Role;
+          emailVerified?: boolean;
+        };
         token.sub = u.id;
         token.role = u.role;
         token.email = u.email;
         token.name = u.name ?? null;
+        token.hasVerifiedEmail = Boolean(u.emailVerified);
         delete token.impersonatorSub;
         return token;
       }
@@ -107,46 +116,61 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (token.role !== Role.admin || token.impersonatorSub) {
             return token;
           }
-          const target = await prisma.user.findFirst({
-            where: { id: s.userId, role: Role.owner, suspended: false },
-            select: { id: true, email: true, name: true, role: true },
-          });
-          if (!target) return token;
-          token.impersonatorSub = token.sub;
-          token.sub = target.id;
-          token.role = target.role;
-          token.email = target.email;
-          token.name = target.name;
+          try {
+            const target = await prisma.user.findFirst({
+              where: { id: s.userId, role: Role.owner, suspended: false },
+              select: { id: true, email: true, name: true, role: true, emailVerified: true },
+            });
+            if (!target) return token;
+            token.impersonatorSub = token.sub;
+            token.sub = target.id;
+            token.role = target.role;
+            token.email = target.email;
+            token.name = target.name;
+            token.hasVerifiedEmail = Boolean(target.emailVerified);
+          } catch (e) {
+            console.error("[auth:jwt] impersonate_failed", e);
+          }
           return token;
         }
         if (s.action === "stopImpersonation" && token.impersonatorSub) {
-          const admin = await prisma.user.findFirst({
-            where: { id: token.impersonatorSub, role: Role.admin, suspended: false },
-            select: { id: true, email: true, name: true, role: true },
-          });
-          if (!admin) {
+          try {
+            const admin = await prisma.user.findFirst({
+              where: { id: token.impersonatorSub, role: Role.admin, suspended: false },
+              select: { id: true, email: true, name: true, role: true, emailVerified: true },
+            });
+            if (!admin) {
+              delete token.impersonatorSub;
+              return token;
+            }
+            token.sub = admin.id;
+            token.role = admin.role;
+            token.email = admin.email;
+            token.name = admin.name;
+            token.hasVerifiedEmail = Boolean(admin.emailVerified);
             delete token.impersonatorSub;
-            return token;
+          } catch (e) {
+            console.error("[auth:jwt] stop_impersonation_failed", e);
           }
-          token.sub = admin.id;
-          token.role = admin.role;
-          token.email = admin.email;
-          token.name = admin.name;
-          delete token.impersonatorSub;
           return token;
         }
       }
 
-      // Keep JWT role in sync with DB so middleware (edge) matches RSC after welcome / role changes.
-      const sub = typeof token.sub === "string" ? token.sub.trim() : "";
-      if (sub.length > 0) {
-        const row = await prisma.user.findUnique({
-          where: { id: sub },
-          select: { role: true, suspended: true },
-        });
-        if (row && !row.suspended) {
-          token.role = row.role;
+      // Keep JWT role + verification flag in sync with DB (welcome flow updates role without re-login).
+      try {
+        const sub = typeof token.sub === "string" ? token.sub.trim() : "";
+        if (sub.length > 0) {
+          const row = await prisma.user.findUnique({
+            where: { id: sub },
+            select: { role: true, suspended: true, emailVerified: true },
+          });
+          if (row && !row.suspended) {
+            token.role = row.role;
+            token.hasVerifiedEmail = Boolean(row.emailVerified);
+          }
         }
+      } catch (e) {
+        console.error("[auth:jwt] db_sync_failed", e);
       }
 
       return token;
@@ -161,15 +185,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
         session.user.name = (token.name as string | null | undefined) ?? session.user.name;
         session.user.isImpersonating = Boolean(token.impersonatorSub);
-        if (sub.length > 0) {
-          const row = await prisma.user.findUnique({
-            where: { id: sub },
-            select: { emailVerified: true },
-          });
-          session.user.hasVerifiedEmail = Boolean(row?.emailVerified);
-        } else {
-          session.user.hasVerifiedEmail = false;
-        }
+        session.user.hasVerifiedEmail = Boolean(token.hasVerifiedEmail);
       }
       return session;
     },

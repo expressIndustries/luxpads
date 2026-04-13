@@ -35,15 +35,10 @@ export default auth((req) => {
     }
   }
 
-  if (pathname.startsWith("/welcome")) {
-    if (!session?.user) {
-      const url = new URL("/login", req.nextUrl.origin);
-      url.searchParams.set("callbackUrl", pathname);
-      return Response.redirect(url);
-    }
-  }
+  // `/welcome` is enforced in `app/welcome/page.tsx` via `auth()` (Node) so we do not duplicate
+  // session resolution here (avoids extra work and keeps a single code path after email verify).
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/account", "/account/:path*", "/welcome"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/account", "/account/:path*"],
 };
