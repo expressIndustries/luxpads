@@ -1,42 +1,38 @@
 import { NextResponse } from "next/server";
-import {
-  consumeEmailVerificationToken,
-  createPostVerifyLoginToken,
-  sanitizeEmailVerificationRedirect,
-} from "@/lib/email-verification";
+import { respondToEmailVerificationRequest } from "@/lib/email-verify-completion";
 import { publicOriginForServer } from "@/lib/seo";
 
+/** Legacy and plain links: do not consume the token (GET). Email scanners prefetch GET; consumption is POST-only. */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
-  const nextParam = searchParams.get("next");
+  const next = searchParams.get("next");
   const publicBase = publicOriginForServer();
 
   if (!token?.trim()) {
     return NextResponse.redirect(new URL("/login?verify=missing", publicBase));
   }
 
-  const result = await consumeEmailVerificationToken(token);
-  if (!result.ok) {
-    const q = result.reason === "expired" ? "expired" : "invalid";
-    return NextResponse.redirect(new URL(`/login?verify=${q}`, publicBase));
+  const confirm = new URL("/auth/confirm-email", publicBase);
+  confirm.searchParams.set("token", token.trim());
+  if (next?.trim()) {
+    confirm.searchParams.set("next", next.trim());
+  }
+  return NextResponse.redirect(confirm);
+}
+
+export async function POST(request: Request) {
+  const ct = request.headers.get("content-type") ?? "";
+  let token: string | null = null;
+  let next: string | null = null;
+
+  if (ct.includes("multipart/form-data") || ct.includes("application/x-www-form-urlencoded")) {
+    const fd = await request.formData();
+    const t = fd.get("token");
+    const n = fd.get("next");
+    token = typeof t === "string" ? t : null;
+    next = typeof n === "string" ? n : null;
   }
 
-  const path = sanitizeEmailVerificationRedirect(result.redirectPath ?? nextParam);
-  const rawLogin = await createPostVerifyLoginToken(result.userId);
-
-  const handoff = new URL("/auth/post-verify", publicBase);
-  handoff.searchParams.set("next", path);
-
-  const res = NextResponse.redirect(handoff);
-  res.cookies.set({
-    name: "luxpads_post_verify",
-    value: rawLogin,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 300,
-    path: "/auth/post-verify",
-  });
-  return res;
+  return respondToEmailVerificationRequest(token, next);
 }

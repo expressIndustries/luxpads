@@ -27,6 +27,7 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
   const contactFlow = fromContact || searchParams.get("contact") === "1";
   const accountType = contactFlow ? "renter" : "owner";
   const checkEmail = searchParams.get("checkEmail") === "1";
+  const turnstileRequired = turnstileConfigured();
 
   useEffect(() => {
     if (checkEmail) {
@@ -60,8 +61,7 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
     if (res.emailVerificationSent) {
       const params = new URLSearchParams(searchParams.toString());
       params.set("checkEmail", "1");
-      router.replace(`/signup?${params.toString()}`);
-      router.refresh();
+      window.location.assign(`/signup?${params.toString()}`);
       return;
     }
 
@@ -134,8 +134,11 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
           : "Signing up is free. We send a quick confirmation link before you can message owners."}
       </p>
       <TurnstileField action="signup" onToken={setTurnstileToken} />
+      {turnstileRequired ? (
+        <p className="text-xs text-stone-600">Complete the security check above, then create your account.</p>
+      ) : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button type="submit" disabled={pending || (turnstileRequired && !turnstileToken?.trim())} className="w-full">
         {pending ? "Creating…" : "Create account"}
       </Button>
       <p className="text-center text-sm text-stone-600">

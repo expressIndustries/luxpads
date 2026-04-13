@@ -14,6 +14,8 @@ const verifyMessages: Record<string, string> = {
   missing: "Missing confirmation link. Open the link from your email, or sign in and resend the confirmation.",
   session:
     "We could not finish signing you in from that link. Sign in with your password below, or open the confirmation link from your email again.",
+  confirmed:
+    "Your email is confirmed. Sign in with the password you used when you created your account.",
 };
 
 function safeCallbackPath(raw: string): string {
