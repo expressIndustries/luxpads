@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const welcomeMessages: Record<string, string> = {
+  retry:
+    "We could not finish loading your account setup. Sign in below and open /welcome again, or contact support if this keeps happening.",
+};
+
 const verifyMessages: Record<string, string> = {
   expired: "That confirmation link has expired. Sign in and use “Resend confirmation email” on the listing.",
   invalid: "That confirmation link is not valid. Try signing up again or resend from the listing page.",
@@ -28,6 +33,9 @@ export function LoginForm() {
   const callbackUrl = safeCallbackPath(search.get("callbackUrl") ?? "/dashboard");
   const verify = search.get("verify");
   const verifyHint = verify && verifyMessages[verify] ? verifyMessages[verify] : null;
+  const welcome = search.get("welcome");
+  const welcomeHint = welcome && welcomeMessages[welcome] ? welcomeMessages[welcome] : null;
+  const hint = verifyHint ?? welcomeHint;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -58,7 +66,7 @@ export function LoginForm() {
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </div>
-      {verifyHint ? <p className="text-sm text-amber-800">{verifyHint}</p> : null}
+      {hint ? <p className="text-sm text-amber-800">{hint}</p> : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}

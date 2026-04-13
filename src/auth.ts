@@ -138,9 +138,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       // Keep JWT role in sync with DB so middleware (edge) matches RSC after welcome / role changes.
-      if (token.sub) {
+      const sub = typeof token.sub === "string" ? token.sub.trim() : "";
+      if (sub.length > 0) {
         const row = await prisma.user.findUnique({
-          where: { id: token.sub },
+          where: { id: sub },
           select: { role: true, suspended: true },
         });
         if (row && !row.suspended) {
@@ -152,16 +153,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub!;
+        const sub = typeof token.sub === "string" ? token.sub.trim() : "";
+        session.user.id = sub;
         session.user.role = (token.role as Role) ?? Role.renter;
         if (typeof token.email === "string") {
           session.user.email = token.email;
         }
         session.user.name = (token.name as string | null | undefined) ?? session.user.name;
         session.user.isImpersonating = Boolean(token.impersonatorSub);
-        if (token.sub) {
+        if (sub.length > 0) {
           const row = await prisma.user.findUnique({
-            where: { id: token.sub },
+            where: { id: sub },
             select: { emailVerified: true },
           });
           session.user.hasVerifiedEmail = Boolean(row?.emailVerified);
