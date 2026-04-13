@@ -44,12 +44,6 @@ export async function SiteHeader() {
           {role === "renter" ? (
             <>
               <Link
-                href="/welcome?upgrade=1"
-                className="hidden rounded-full border border-amber-200 bg-amber-50/80 px-4 py-2 text-sm text-amber-950 transition hover:border-amber-300 sm:inline-block"
-              >
-                List your home
-              </Link>
-              <Link
                 href="/account/messages"
                 aria-label={
                   renterUnread > 0 ? `Messages, ${renterUnread} unread from owners` : "Messages"

@@ -127,8 +127,8 @@ export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
       </div>
       <p className="text-xs text-stone-600">
         {contactFlow
-          ? "We will email you a confirmation link before you can contact the owner. After that, you will choose renter or owner."
-          : "Signing up is free. We email a confirmation link; once you open it, you will sign in and choose how you use LuxPads (guest or host)."}
+          ? "We will email you a confirmation link before you can contact the owner. After that, finish welcome to start messaging."
+          : "Signing up is free. We email a confirmation link; once you open it, you sign in and finish a short welcome step. Guest accounts stay renters—to list a home, sign up with a different email via For owners."}
       </p>
       <TurnstileField action="signup" onToken={setTurnstileToken} />
       {turnstileRequired ? (

@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type Props = {
-  searchParams: Promise<{ email_verified?: string; dest?: string; upgrade?: string }>;
+  searchParams: Promise<{ email_verified?: string; dest?: string }>;
 };
 
 export default async function WelcomePage({ searchParams }: Props) {
@@ -39,15 +39,14 @@ export default async function WelcomePage({ searchParams }: Props) {
     redirect("/login?callbackUrl=/welcome");
   }
 
-  const upgradeOnly = sp.upgrade === "1";
-  if (upgradeOnly && (user.role === Role.owner || user.role === Role.admin)) {
+  if (user.role === Role.owner) {
     redirect("/dashboard");
   }
+  if (user.role === Role.admin) {
+    redirect("/admin");
+  }
 
-  if (user.welcomeCompletedAt && !upgradeOnly) {
-    if (user.role === Role.owner || user.role === Role.admin) {
-      redirect("/dashboard");
-    }
+  if (user.welcomeCompletedAt) {
     redirect("/");
   }
 
@@ -55,11 +54,7 @@ export default async function WelcomePage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
-      <WelcomeClient
-        upgradeOnly={upgradeOnly}
-        dest={dest}
-        emailVerifiedBanner={sp.email_verified === "1"}
-      />
+      <WelcomeClient dest={dest} emailVerifiedBanner={sp.email_verified === "1"} />
     </div>
   );
 }

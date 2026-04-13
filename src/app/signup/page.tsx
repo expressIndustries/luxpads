@@ -6,7 +6,7 @@ import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Create account",
-  description: `Create a free ${siteCopy.legalName} account to browse luxury homes, message homeowners, or list your property.`,
+  description: `Create a free ${siteCopy.legalName} guest account to browse luxury homes and message homeowners. Listing uses a separate owner signup.`,
   alternates: { canonical: "/signup" },
   openGraph: {
     url: absoluteUrl("/signup"),
@@ -29,7 +29,7 @@ export default async function SignupPage({ searchParams }: Props) {
           ? "You are one step away—use the link in the email we sent to finish confirming your account."
           : fromContact
             ? "Create an account to contact this homeowner. You will confirm your email before your message is sent."
-            : "One free account. After you confirm your email, you will pick guest or host—hosts can list a home."}
+            : "One free guest account. After you confirm your email, finish welcome to start exploring. To list a home, use a separate email via For owners."}
       </p>
       <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
         <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>
