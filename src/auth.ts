@@ -5,40 +5,19 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { consumePostVerifyLoginToken } from "@/lib/email-verification";
+import { authConfig, credentialsFields } from "@/auth.config";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
 
-/** Public site origin for redirects. Fixes sign-out/login landing on localhost when the app sees Host as 127.0.0.1:3000 behind Docker/proxy. */
-function authCanonicalBaseUrl(): string | null {
-  const raw =
-    process.env.AUTH_URL?.trim() ||
-    process.env.NEXTAUTH_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (!raw) return null;
-  try {
-    return new URL(raw).origin;
-  } catch {
-    return null;
-  }
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
-  pages: {
-    signIn: "/login",
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: "Email and password",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-        postVerifyToken: { label: "Post verify", type: "text" },
-      },
+      credentials: credentialsFields,
       async authorize(raw) {
         const postToken =
           raw && typeof raw === "object" && "postVerifyToken" in raw
@@ -74,24 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    redirect({ url, baseUrl }) {
-      const canonical = authCanonicalBaseUrl();
-      const effectiveBase = canonical ?? baseUrl;
-
-      if (url.startsWith("/")) {
-        return `${effectiveBase}${url}`;
-      }
-      try {
-        const target = new URL(url);
-        const base = new URL(effectiveBase);
-        if (target.origin === base.origin) {
-          return url;
-        }
-      } catch {
-        /* invalid URL */
-      }
-      return effectiveBase;
-    },
+    ...authConfig.callbacks,
     async jwt({ token, user, trigger, session }) {
       if (user) {
         const u = user as {
@@ -156,7 +118,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
 
-      // Keep JWT role + verification flag in sync with DB (welcome flow updates role without re-login).
       try {
         const sub = typeof token.sub === "string" ? token.sub.trim() : "";
         if (sub.length > 0) {
@@ -174,20 +135,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        const sub = typeof token.sub === "string" ? token.sub.trim() : "";
-        session.user.id = sub;
-        session.user.role = (token.role as Role) ?? Role.renter;
-        if (typeof token.email === "string") {
-          session.user.email = token.email;
-        }
-        session.user.name = (token.name as string | null | undefined) ?? session.user.name;
-        session.user.isImpersonating = Boolean(token.impersonatorSub);
-        session.user.hasVerifiedEmail = Boolean(token.hasVerifiedEmail);
-      }
-      return session;
     },
   },
 });

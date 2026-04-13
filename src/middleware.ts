@@ -1,6 +1,8 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 
-export default auth((req) => {
+/** Edge-safe: do not import `@/auth` here (it pulls `node:crypto` via email verification). */
+export default NextAuth(authConfig).auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
