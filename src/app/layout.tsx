@@ -21,17 +21,36 @@ const sans = DM_Sans({
   variable: "--font-sans",
 });
 
+/** Default link-preview title (Messages, Slack, OG). Child routes use `template`. */
+const shareTitle = `${siteCopy.legalName} | ${siteCopy.tagline}`;
+
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default: siteCopy.legalName,
+    default: shareTitle,
     template: `%s | ${siteCopy.domainDisplay}`,
   },
   description: siteCopy.tagline,
+  applicationName: siteCopy.legalName,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim() } }
+    : {}),
   openGraph: {
-    title: siteCopy.legalName,
+    title: shareTitle,
     description: siteCopy.tagline,
     type: "website",
+    siteName: siteCopy.legalName,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: shareTitle,
+    description: siteCopy.tagline,
   },
 };
 

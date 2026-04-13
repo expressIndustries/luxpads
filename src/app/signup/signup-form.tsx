@@ -2,19 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerUser } from "@/lib/actions/register";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TurnstileField, turnstileConfigured } from "@/components/security/turnstile-field";
+import { gaEvent } from "@/lib/gtag";
 
-export function SignupForm() {
+function safeInternalPath(raw: string | null): string {
+  if (!raw?.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+}
+
+export function SignupForm({ fromContact = false }: { fromContact?: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const callbackUrl = safeInternalPath(searchParams.get("callbackUrl"));
+  const contactFlow = fromContact || searchParams.get("contact") === "1";
+  const accountType = contactFlow ? "renter" : "owner";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,17 +47,23 @@ export function SignupForm() {
     }
     const email = String(fd.get("email") ?? "");
     const password = String(fd.get("password") ?? "");
+    gaEvent("sign_up", {
+      method: "email",
+      flow: contactFlow ? "contact_owner" : "organic",
+    });
     const sign = await signIn("credentials", { email, password, redirect: false });
     if (sign?.error) {
       setError("Account created but sign-in failed. Try logging in.");
       return;
     }
-    router.push("/dashboard");
+    router.push(callbackUrl);
     router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <input type="hidden" name="accountType" value={accountType} />
+      <input type="hidden" name="redirectPath" value={callbackUrl} />
       <div className="space-y-2">
         <Label htmlFor="name">Full name</Label>
         <Input id="name" name="name" required autoComplete="name" />
@@ -61,7 +78,9 @@ export function SignupForm() {
         <p className="text-xs text-stone-500">At least 8 characters.</p>
       </div>
       <p className="text-xs text-stone-600">
-        Signing up is free. You can browse, inquire, and publish listings as soon as your account is created.
+        {contactFlow
+          ? "We will email you a confirmation link before you can contact the owner."
+          : "Signing up is free. When email delivery is enabled, we send a quick confirmation link before you can message owners."}
       </p>
       <TurnstileField action="signup" onToken={setTurnstileToken} />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -70,7 +89,10 @@ export function SignupForm() {
       </Button>
       <p className="text-center text-sm text-stone-600">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-stone-900 underline decoration-stone-300 underline-offset-4">
+        <Link
+          href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+          className="font-medium text-stone-900 underline decoration-stone-300 underline-offset-4"
+        >
           Log in
         </Link>
       </p>

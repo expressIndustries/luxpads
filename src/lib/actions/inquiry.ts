@@ -12,8 +12,6 @@ import { getRequestIp, verifyTurnstileToken } from "@/lib/turnstile-verify";
 
 const schema = z.object({
   listingSlug: z.string().min(1),
-  renterName: z.string().min(1).max(120),
-  renterEmail: z.string().email(),
   renterPhone: z.string().max(40).optional().or(z.literal("")),
   message: z.string().min(10).max(4000),
   guestCount: z.coerce.number().int().min(1).max(50).optional(),
@@ -25,6 +23,11 @@ const schema = z.object({
 export type InquiryState = { error?: string; ok?: boolean; is_new_thread?: boolean };
 
 export async function submitInquiry(_prev: InquiryState, formData: FormData): Promise<InquiryState> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Sign in to contact the owner." };
+  }
+
   const ip = await getRequestIp();
   const ts = await verifyTurnstileToken(String(formData.get("cf-turnstile-response") ?? ""), ip);
   if (!ts.ok) {
@@ -33,8 +36,6 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
 
   const parsed = schema.safeParse({
     listingSlug: formData.get("listingSlug"),
-    renterName: formData.get("renterName"),
-    renterEmail: formData.get("renterEmail"),
     renterPhone: formData.get("renterPhone") || "",
     message: formData.get("message"),
     guestCount: formData.get("guestCount") || undefined,
@@ -51,6 +52,17 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
     return { error: "Unable to send inquiry." };
   }
 
+  const account = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { email: true, name: true, emailVerified: true, suspended: true },
+  });
+  if (!account || account.suspended) {
+    return { error: "Your account cannot send inquiries right now." };
+  }
+  if (!account.emailVerified) {
+    return { error: "Confirm your email before contacting the owner. Check your inbox for the LuxPads link." };
+  }
+
   const listing = await prisma.listing.findFirst({
     where: publicListingWhere({ slug: parsed.data.listingSlug }),
     include: {
@@ -62,10 +74,14 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
     return { error: "This listing is not available for inquiries." };
   }
 
-  const session = await auth();
+  if (listing.ownerId === session.user.id) {
+    return { error: "You cannot send an inquiry on your own listing." };
+  }
+
   const checkIn = parsed.data.checkIn ? new Date(parsed.data.checkIn) : null;
   const checkOut = parsed.data.checkOut ? new Date(parsed.data.checkOut) : null;
-  const emailNorm = normalizeRenterEmail(parsed.data.renterEmail);
+  const emailNorm = normalizeRenterEmail(account.email);
+  const renterName = (account.name ?? "").trim() || "Guest";
 
   const existing = await prisma.conversation.findUnique({
     where: {
@@ -88,9 +104,9 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
       prisma.conversation.update({
         where: { id: existing.id },
         data: {
-          renterName: parsed.data.renterName,
+          renterName,
           renterPhone: parsed.data.renterPhone || null,
-          renterUserId: session?.user?.id ?? existing.renterUserId,
+          renterUserId: session.user.id,
           checkIn: checkIn && !Number.isNaN(checkIn.getTime()) ? checkIn : existing.checkIn,
           checkOut: checkOut && !Number.isNaN(checkOut.getTime()) ? checkOut : existing.checkOut,
           guestCount: parsed.data.guestCount ?? existing.guestCount,
@@ -101,44 +117,44 @@ export async function submitInquiry(_prev: InquiryState, formData: FormData): Pr
     await notifyOwnerOfRenterMessage({
       ownerEmail,
       listingTitle: listing.title,
-      guestDisplayName: parsed.data.renterName,
+      guestDisplayName: renterName,
       messageBody,
       conversationId: existing.id,
       mailThreadToken: existing.mailThreadToken,
     });
 
     return { ok: true, is_new_thread: false };
-  } else {
-    const conv = await prisma.conversation.create({
-      data: {
-        listingId: listing.id,
-        ownerId: listing.ownerId,
-        renterName: parsed.data.renterName,
-        renterEmail: emailNorm,
-        renterPhone: parsed.data.renterPhone || null,
-        renterUserId: session?.user?.id ?? null,
-        checkIn: checkIn && !Number.isNaN(checkIn.getTime()) ? checkIn : null,
-        checkOut: checkOut && !Number.isNaN(checkOut.getTime()) ? checkOut : null,
-        guestCount: parsed.data.guestCount ?? null,
-        mailThreadToken: generateMailThreadToken(),
-        messages: {
-          create: {
-            senderRole: MessageSender.renter,
-            body: messageBody,
-          },
+  }
+
+  const conv = await prisma.conversation.create({
+    data: {
+      listingId: listing.id,
+      ownerId: listing.ownerId,
+      renterName,
+      renterEmail: emailNorm,
+      renterPhone: parsed.data.renterPhone || null,
+      renterUserId: session.user.id,
+      checkIn: checkIn && !Number.isNaN(checkIn.getTime()) ? checkIn : null,
+      checkOut: checkOut && !Number.isNaN(checkOut.getTime()) ? checkOut : null,
+      guestCount: parsed.data.guestCount ?? null,
+      mailThreadToken: generateMailThreadToken(),
+      messages: {
+        create: {
+          senderRole: MessageSender.renter,
+          body: messageBody,
         },
       },
-    });
+    },
+  });
 
-    await notifyOwnerOfNewConversation({
-      ownerEmail,
-      listingTitle: listing.title,
-      guestDisplayName: parsed.data.renterName,
-      messageBody,
-      conversationId: conv.id,
-      mailThreadToken: conv.mailThreadToken,
-    });
-  }
+  await notifyOwnerOfNewConversation({
+    ownerEmail,
+    listingTitle: listing.title,
+    guestDisplayName: renterName,
+    messageBody,
+    conversationId: conv.id,
+    mailThreadToken: conv.mailThreadToken,
+  });
 
   return { ok: true, is_new_thread: true };
 }

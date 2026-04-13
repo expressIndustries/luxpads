@@ -1,10 +1,71 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getFeaturedListings } from "@/lib/queries/search-listings";
 import { ListingCard } from "@/components/listing/listing-card";
 import { siteCopy } from "@/lib/constants";
+import { absoluteUrl, siteOrigin } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+const HOME_HERO =
+  "https://luxpads.s3.us-east-1.amazonaws.com/listing-images/5061ef72-2524-47a2-b649-6e02ebbcb876.jpg";
+
+const homeDescription =
+  "Luxury vacation homes with no traveler booking fees. Browse featured stays, contact homeowners directly, and list your property for free on LuxPads.";
+
+export const metadata: Metadata = {
+  title: { absolute: `${siteCopy.legalName} | ${siteCopy.tagline}` },
+  description: homeDescription,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: `${siteCopy.legalName} | ${siteCopy.tagline}`,
+    description: homeDescription,
+    url: absoluteUrl("/"),
+    type: "website",
+    locale: "en_US",
+    siteName: siteCopy.legalName,
+    images: [{ url: HOME_HERO, alt: "Luxury vacation home — book directly with the owner on LuxPads" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteCopy.legalName} | ${siteCopy.tagline}`,
+    description: homeDescription.slice(0, 200),
+    images: [HOME_HERO],
+  },
+};
+
+function homeStructuredData() {
+  const origin = siteOrigin();
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${origin}/#website`,
+        name: siteCopy.legalName,
+        alternateName: siteCopy.domainDisplay,
+        url: origin,
+        description: homeDescription,
+        publisher: { "@id": `${origin}/#organization` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${origin}/search?q={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${origin}/#organization`,
+        name: siteCopy.legalName,
+        url: origin,
+      },
+    ],
+  };
+}
 
 export default async function HomePage() {
   let featured: Awaited<ReturnType<typeof getFeaturedListings>> = [];
@@ -16,10 +77,11 @@ export default async function HomePage() {
 
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData()) }} />
       <section className="relative isolate min-h-[78vh] overflow-hidden">
         <Image
-          src="https://luxpads.s3.us-east-1.amazonaws.com/listing-images/5061ef72-2524-47a2-b649-6e02ebbcb876.jpg"
-          alt=""
+          src={HOME_HERO}
+          alt="Luxury vacation home exterior — explore homes on LuxPads"
           fill
           priority
           unoptimized

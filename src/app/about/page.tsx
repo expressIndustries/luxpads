@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
 import { siteCopy } from "@/lib/constants";
+import { absoluteUrl } from "@/lib/seo";
+
+const aboutDescription = `Learn why ${siteCopy.legalName} was built: direct booking with homeowners, no traveler booking fees, and a marketplace focused on luxury stays and events like Sundance.`;
 
 export const metadata: Metadata = {
-  title: "About",
+  title: `About ${siteCopy.legalName}`,
+  description: aboutDescription,
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: `About ${siteCopy.legalName}`,
+    description: aboutDescription,
+    url: absoluteUrl("/about"),
+    type: "website",
+  },
 };
 
 export default function AboutPage() {

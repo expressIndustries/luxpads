@@ -131,6 +131,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
         session.user.name = (token.name as string | null | undefined) ?? session.user.name;
         session.user.isImpersonating = Boolean(token.impersonatorSub);
+        if (token.sub) {
+          const row = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { emailVerified: true },
+          });
+          session.user.hasVerifiedEmail = Boolean(row?.emailVerified);
+        } else {
+          session.user.hasVerifiedEmail = false;
+        }
       }
       return session;
     },

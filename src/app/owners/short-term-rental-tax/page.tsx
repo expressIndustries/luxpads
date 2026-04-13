@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { siteCopy } from "@/lib/constants";
+import { absoluteUrl } from "@/lib/seo";
+
+const taxDescription =
+  "Plain-language overview of the federal 14-day rule (IRC Section 280A(g)) for short-term rentals: when income may be tax-free and when it is taxable. For LuxPads homeowners.";
 
 export const metadata: Metadata = {
-  title: "Short-term rental income & Section 280A(g)",
-  description:
-    "A plain-language overview of the federal 14-day rule for renting your home—when income may be excluded and when it is taxable.",
+  title: "Short-term rental tax — 14-day rule (Section 280A)",
+  description: taxDescription,
+  alternates: { canonical: "/owners/short-term-rental-tax" },
+  openGraph: {
+    title: `Short-term rental tax basics | ${siteCopy.legalName}`,
+    description: taxDescription,
+    url: absoluteUrl("/owners/short-term-rental-tax"),
+  },
 };
 
 export default function ShortTermRentalTaxPage() {

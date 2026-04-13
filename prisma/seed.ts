@@ -20,6 +20,7 @@ async function main() {
   await prisma.listingImage.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.ownerProfile.deleteMany();
+  await prisma.emailVerificationToken.deleteMany();
   await prisma.user.deleteMany();
   await prisma.featuredDestination.deleteMany();
   await prisma.amenity.deleteMany();
@@ -58,6 +59,7 @@ async function main() {
       passwordHash: password,
       name: "LuxPads Admin",
       role: Role.admin,
+      emailVerified: new Date(),
     },
   });
 
@@ -67,6 +69,7 @@ async function main() {
       passwordHash: password,
       name: "Elena Whitmore",
       role: Role.owner,
+      emailVerified: new Date(),
       phone: "+1 310 555 0142",
       ownerProfile: {
         create: {
@@ -86,6 +89,7 @@ async function main() {
       passwordHash: password,
       name: "Marcus Chen",
       role: Role.owner,
+      emailVerified: new Date(),
       ownerProfile: {
         create: {
           displayName: "Chen Collective",
@@ -103,6 +107,7 @@ async function main() {
       passwordHash: password,
       name: "Sofia Navarro",
       role: Role.owner,
+      emailVerified: new Date(),
       ownerProfile: {
         create: {
           displayName: "Navarro Villas",
@@ -120,6 +125,7 @@ async function main() {
       passwordHash: password,
       name: "Jordan Lee",
       role: Role.renter,
+      emailVerified: new Date(),
     },
   });
 

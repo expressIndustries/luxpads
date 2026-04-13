@@ -51,18 +51,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Still emit static routes (marketing + guaranteed paths) if DB is unreachable.
   }
 
+  function staticPriority(path: string): number {
+    if (path === "") return 1;
+    if (path === "/rent-home-for-sundance-film-festival-boulder") return 0.95;
+    if (path === "/search") return 0.9;
+    if (path.startsWith("/owners")) return 0.75;
+    return 0.65;
+  }
+
+  function staticChangeFrequency(path: string): "daily" | "weekly" {
+    if (path === "") return "daily";
+    return "weekly";
+  }
+
   const staticRoutes = mergedStaticPaths().map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: path === "" ? 1 : 0.7,
+    changeFrequency: staticChangeFrequency(path),
+    priority: staticPriority(path),
   }));
 
   const listingRoutes = listings.map((l) => ({
     url: `${base}/listing/${l.slug}`,
     lastModified: l.updatedAt,
     changeFrequency: "weekly" as const,
-    priority: 0.8,
+    priority: 0.85,
   }));
 
   return [...staticRoutes, ...listingRoutes];

@@ -1,7 +1,8 @@
 /**
  * Paths merged into `/sitemap.xml` (see `app/sitemap.ts`). Listing URLs are added separately from the DB.
  *
- * When you add a new **public, indexable** route under `src/app/<segment>/page.tsx`, append its pathname here
+ * When you add a new **public, indexable** route under `src/app/<segment>/page.tsx`, append its pathname here so
+ * Google and other crawlers discover it via `/sitemap.xml` (see also `app/sitemap.ts` priorities).
  * (leading slash, no trailing slash). Skip:
  * - `/dashboard/*`, `/admin/*`, `/account/*` (auth)
  * - `/listing/[slug]` (generated from Prisma)

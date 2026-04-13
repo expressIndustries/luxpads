@@ -22,7 +22,20 @@ function SubmitRow() {
   );
 }
 
-export function InquiryForm({ listingSlug }: { listingSlug: string }) {
+function redactEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return email;
+  const head = local.slice(0, 2);
+  return `${head}…@${domain}`;
+}
+
+export function InquiryForm({
+  listingSlug,
+  messagingAs,
+}: {
+  listingSlug: string;
+  messagingAs: { name: string; email: string };
+}) {
   const [state, formAction] = useFormState(submitInquiry, initial);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
@@ -42,9 +55,8 @@ export function InquiryForm({ listingSlug }: { listingSlug: string }) {
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-6 text-sm text-emerald-950">
         <p className="font-medium">Inquiry sent</p>
         <p className="mt-2 text-emerald-900/90">
-          The homeowner can reply here on LuxPads and you will be notified by email. If you have an account with the same
-          email, open Messages in your account to continue the thread. Final agreements and payments stay between you
-          and the owner.
+          The homeowner can reply here on LuxPads and you will be notified by email. Open Messages in your account to
+          continue the thread. Final agreements and payments stay between you and the owner.
         </p>
       </div>
     );
@@ -68,6 +80,10 @@ export function InquiryForm({ listingSlug }: { listingSlug: string }) {
   return (
     <div className="space-y-6">
       <MarketplaceDisclaimer />
+      <p className="text-xs text-stone-600">
+        Messaging as <span className="font-medium text-stone-800">{messagingAs.name}</span> (
+        {redactEmail(messagingAs.email)}). The owner sees the name on your account.
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input type="hidden" name="listingSlug" value={listingSlug} />
         <div className="hidden" aria-hidden>
@@ -75,16 +91,6 @@ export function InquiryForm({ listingSlug }: { listingSlug: string }) {
             Website
             <input name="website" autoComplete="off" tabIndex={-1} className="hidden" />
           </label>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="renterName">Full name</Label>
-            <Input id="renterName" name="renterName" required placeholder="Jordan Lee" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="renterEmail">Email</Label>
-            <Input id="renterEmail" name="renterEmail" type="email" required placeholder="you@company.com" />
-          </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">

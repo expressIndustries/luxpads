@@ -3,21 +3,49 @@ import { prisma } from "@/lib/prisma";
 import { searchListings } from "@/lib/queries/search-listings";
 import { ListingCard } from "@/components/listing/listing-card";
 import { ExploreFiltersForm } from "@/components/search/explore-filters-form";
-
-export const metadata: Metadata = {
-  title: "Browse luxury homes",
-  description: "Search by destination, dates, guests, and amenities. Contact owners directly.",
-};
+import { siteCopy } from "@/lib/constants";
+import { absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-type Props = {
+type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function first(v: string | string[] | undefined) {
   if (Array.isArray(v)) return v[0];
   return v;
+}
+
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  const sp = await searchParams;
+  const city = first(sp.city)?.trim();
+  const title = city
+    ? `Luxury vacation rentals in ${city} | ${siteCopy.legalName}`
+    : `Browse luxury vacation rentals | ${siteCopy.legalName}`;
+  const description = city
+    ? `Find homes in ${city}. Filter by guests, dates, and amenities. No traveler booking fees — message homeowners directly on ${siteCopy.domainDisplay}.`
+    : `Search luxury homes by destination, dates, guests, and amenities. Contact owners directly on ${siteCopy.domainDisplay} — no traveler booking fees.`;
+  const canonicalPath = city ? `/search?city=${encodeURIComponent(city)}` : "/search";
+
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl(canonicalPath),
+      type: "website",
+      locale: "en_US",
+      siteName: siteCopy.legalName,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: description.slice(0, 200),
+    },
+  };
 }
 
 function listParam(v: string | string[] | undefined) {
@@ -53,7 +81,7 @@ function countActiveExploreFilters(params: {
   return n;
 }
 
-export default async function SearchPage({ searchParams }: Props) {
+export default async function SearchPage({ searchParams }: SearchPageProps) {
   const sp = await searchParams;
   const city = first(sp.city);
   const q = first(sp.q);

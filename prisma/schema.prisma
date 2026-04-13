@@ -56,6 +56,21 @@ model User {
   conversationsAsRenter  Conversation[]  @relation("RenterConversations")
   favorites              Favorite[]
   adminActions   AdminAction[]   @relation("AdminActions")
+  emailVerificationTokens EmailVerificationToken[]
+}
+
+/// One-time link to confirm email after signup (Mailgun outbound).
+model EmailVerificationToken {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  /// Path-only redirect after success (e.g. /listing/my-slug), validated in verify route.
+  redirectPath String?  @db.VarChar(512)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }
 
 model OwnerProfile {

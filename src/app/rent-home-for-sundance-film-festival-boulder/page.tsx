@@ -3,18 +3,46 @@ import Image from "next/image";
 import Link from "next/link";
 import { siteCopy } from "@/lib/constants";
 import { sundancePageImages } from "@/content/sundance-page-images";
+import { absoluteUrl, siteOrigin } from "@/lib/seo";
 
 const OFFICIAL_SUNDANCE_BOULDER =
   "https://www.sundance.org/blogs/2027-sundance-film-festival-to-take-place-january-21-31-in-boulder-colorado/";
 
+const SUNDANCE_PATH = "/rent-home-for-sundance-film-festival-boulder" as const;
+
+const sundanceDescription =
+  "January 21–31, 2027: rent your Boulder, Colorado home for the Sundance Film Festival. Venue areas (Pearl Street, CU, Dairy Arts, Chautauqua), free LuxPads listings, and direct guest inquiries.";
+
+const sundanceHeroAbsoluteUrl = sundancePageImages.hero.src.startsWith("http")
+  ? sundancePageImages.hero.src
+  : `${siteOrigin()}${sundancePageImages.hero.src}`;
+
 export const metadata: Metadata = {
-  title: "Rent your home for Sundance 2027 in Boulder",
-  description:
-    "January 21–31, 2027. List your Boulder-area home for the Sundance Film Festival. Festival dates, venue areas, and how to get started on LuxPads.",
+  title: "Rent your Boulder home for Sundance Film Festival 2027 | LuxPads",
+  description: sundanceDescription,
+  alternates: { canonical: SUNDANCE_PATH },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   openGraph: {
-    title: `Sundance Boulder 2027 | ${siteCopy.legalName}`,
-    description: "Rent your home for the 2027 Sundance Film Festival in Boulder, Colorado.",
-    images: [{ url: sundancePageImages.hero.src, alt: "Sundance Film Festival in Boulder — LuxPads" }],
+    type: "website",
+    locale: "en_US",
+    siteName: siteCopy.legalName,
+    url: absoluteUrl(SUNDANCE_PATH),
+    title: "Sundance Film Festival 2027 in Boulder — list your rental home | LuxPads",
+    description: sundanceDescription,
+    images: [
+      {
+        url: sundanceHeroAbsoluteUrl,
+        width: sundancePageImages.hero.width,
+        height: sundancePageImages.hero.height,
+        alt: "Flatirons and Boulder, Colorado — Sundance Film Festival 2027 host city",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rent your home for Sundance 2027 in Boulder, Colorado",
+    description: sundanceDescription.slice(0, 200),
+    images: [sundanceHeroAbsoluteUrl],
   },
 };
 
@@ -77,13 +105,77 @@ const steps = [
   },
 ];
 
+function sundanceStructuredData() {
+  const pageUrl = absoluteUrl(SUNDANCE_PATH);
+  const heroPath = sundancePageImages.hero.src;
+  const heroAbsolute = heroPath.startsWith("http") ? heroPath : `${siteOrigin()}${heroPath}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: "Rent your home for the 2027 Sundance Film Festival in Boulder, Colorado",
+        description: sundanceDescription,
+        isPartOf: {
+          "@type": "WebSite",
+          name: siteCopy.legalName,
+          url: siteOrigin(),
+        },
+        primaryImageOfPage: {
+          "@type": "ImageObject",
+          url: heroAbsolute,
+        },
+        about: {
+          "@type": "Event",
+          name: "Sundance Film Festival 2027",
+          startDate: "2027-01-21",
+          endDate: "2027-01-31",
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          location: {
+            "@type": "Place",
+            name: "Boulder, Colorado",
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: "Boulder",
+              addressRegion: "CO",
+              addressCountry: "US",
+            },
+          },
+          sameAs: OFFICIAL_SUNDANCE_BOULDER,
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Sundance 2027 · Boulder",
+            item: pageUrl,
+          },
+        ],
+      },
+    ],
+  };
+}
+
 export default function SundanceBoulderPage() {
   return (
     <div className="bg-[#faf9f7]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sundanceStructuredData()) }} />
       <section className="relative isolate min-h-[62vh] overflow-hidden">
         <Image
           src={sundancePageImages.hero}
-          alt=""
+          alt="Boulder Flatirons and foothills — host city for Sundance Film Festival 2027"
           fill
           priority
           unoptimized

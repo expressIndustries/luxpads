@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getPublicListingBySlug } from "@/lib/queries/listing-by-slug";
 import { formatHostDisplayName, formatMoney } from "@/lib/utils";
 import {
@@ -10,8 +11,11 @@ import {
 } from "@/components/listing/listing-gallery-lightbox";
 import { ListingMap } from "@/components/listing/listing-map";
 import { AvailabilityPreview } from "@/components/listing/availability-preview";
-import { InquiryForm } from "@/components/listing/inquiry-form";
+import { ListingContactSection } from "@/components/listing/listing-contact-section";
+import { EmailVerifiedTracker } from "@/components/analytics/email-verified-tracker";
 import { siteCopy } from "@/lib/constants";
+import { buildListingMetaDescription, absoluteUrl } from "@/lib/seo";
+import { buildListingBreadcrumbJsonLd, buildListingJsonLd } from "@/lib/listing-jsonld";
 
 export const dynamic = "force-dynamic";
 
@@ -20,15 +24,39 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const listing = await getPublicListingBySlug(slug);
-  if (!listing) return { title: "Listing" };
+  if (!listing) return { title: "Listing not found", robots: { index: false, follow: false } };
+
+  const description = buildListingMetaDescription(listing);
   const image = listing.images[0]?.url;
+  const title = `${listing.title} · ${listing.city}, ${listing.state}`;
+  const canonicalPath = `/listing/${listing.slug}`;
+
   return {
-    title: listing.title,
-    description: listing.summary.slice(0, 155),
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
     openGraph: {
-      title: listing.title,
-      description: listing.summary,
-      images: image ? [{ url: image }] : undefined,
+      type: "website",
+      locale: "en_US",
+      siteName: siteCopy.legalName,
+      url: absoluteUrl(canonicalPath),
+      title,
+      description,
+      images: image
+        ? [
+            {
+              url: image,
+              alt: listing.title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: description.slice(0, 200),
+      images: image ? [image] : undefined,
     },
   };
 }
@@ -45,32 +73,55 @@ export default async function ListingDetailPage({ params }: Props) {
   const hero = listing.images[0]?.url ?? "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80";
   const galleryImages = listing.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt }));
 
-  const jsonLd = {
+  const jsonLdGraph = {
     "@context": "https://schema.org",
-    "@type": "Accommodation",
-    name: listing.title,
-    description: listing.summary,
-    image: listing.images.map((i) => i.url),
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: listing.addressLine1,
-      addressLocality: listing.city,
-      addressRegion: listing.state,
-      postalCode: listing.postalCode,
-      addressCountry: listing.country,
-    },
-    numberOfRooms: listing.bedrooms,
-    occupancy: { "@type": "QuantitativeValue", maxValue: listing.maxGuests },
-    priceRange: `${formatMoney(listing.nightlyRateCents)} per night (indicative)`,
+    "@graph": [
+      buildListingJsonLd({
+        slug: listing.slug,
+        title: listing.title,
+        summary: listing.summary,
+        description: listing.description,
+        propertyType: listing.propertyType,
+        addressLine1: listing.addressLine1,
+        city: listing.city,
+        state: listing.state,
+        postalCode: listing.postalCode,
+        country: listing.country,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        maxGuests: listing.maxGuests,
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        nightlyRateCents: listing.nightlyRateCents,
+        images: listing.images.map((i) => ({ url: i.url, alt: i.alt })),
+      }),
+      buildListingBreadcrumbJsonLd({
+        slug: listing.slug,
+        title: listing.title,
+        city: listing.city,
+        state: listing.state,
+      }),
+    ],
   };
 
   return (
     <article className="pb-20">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <Suspense fallback={null}>
+        <EmailVerifiedTracker listingSlug={slug} />
+      </Suspense>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }} />
 
       <ListingGalleryLightboxProvider images={galleryImages} listingTitle={listing.title}>
         <div className="relative aspect-[21/9] min-h-[320px] w-full overflow-hidden bg-stone-100">
-          <Image src={hero} alt="" fill priority unoptimized className="object-cover" sizes="100vw" />
+          <Image
+            src={hero}
+            alt={`${listing.title} — ${listing.city}, ${listing.state}`}
+            fill
+            priority
+            unoptimized
+            className="object-cover"
+            sizes="100vw"
+          />
           <ListingHeroLightboxTrigger />
           <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-stone-950/55 to-transparent" />
           <div className="pointer-events-none absolute inset-0 z-[3] flex items-end justify-center px-4 pb-10 sm:px-6 lg:px-8">
@@ -189,7 +240,7 @@ export default async function ListingDetailPage({ params }: Props) {
             <div className="mt-6 border-t border-stone-100 pt-6">
               <p className="text-sm font-medium text-stone-900">Contact owner</p>
               <p className="mt-2 text-xs leading-relaxed text-stone-600">
-                {siteCopy.marketplaceDisclaimer}
+                Sign up (or log in), confirm your email, then send your inquiry. {siteCopy.marketplaceDisclaimer}
               </p>
             </div>
           </div>
@@ -203,12 +254,13 @@ export default async function ListingDetailPage({ params }: Props) {
           </div>
 
           <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-            <h2 className="font-serif text-xl text-stone-900">Send inquiry</h2>
+            <h2 className="font-serif text-xl text-stone-900">Message the homeowner</h2>
             <p className="mt-2 text-sm text-stone-600">
-              Share your dates and intent. This is not instant booking—owners respond on their timeline.
+              Sign in, confirm your email, then share dates and intent. This is not instant booking—owners respond on
+              their timeline.
             </p>
             <div className="mt-6">
-              <InquiryForm listingSlug={listing.slug} />
+              <ListingContactSection listingSlug={listing.slug} />
             </div>
           </div>
         </aside>

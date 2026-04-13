@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { siteCopy } from "@/lib/constants";
+import { absoluteUrl } from "@/lib/seo";
 
 const SAMPLE_LEASE_HREF = "/docs/2025%20Residential%20Lease%20Agreement%20-%20BLANK.docx";
 
+const ownersDescription = `List luxury homes on ${siteCopy.domainDisplay} for free. No traveler booking fees; you screen guests, set terms, and handle payment directly — ${siteCopy.legalName} is a listing marketplace, not a booking middleman.`;
+
 export const metadata: Metadata = {
-  title: "For owners",
-  description: "List luxury homes for free. No platform commissions on your bookings.",
+  title: "For owners — list your home for free",
+  description: ownersDescription,
+  alternates: { canonical: "/owners" },
+  openGraph: {
+    title: `For owners | ${siteCopy.legalName}`,
+    description: ownersDescription,
+    url: absoluteUrl("/owners"),
+    type: "website",
+  },
 };
 
 export default function OwnersPage() {

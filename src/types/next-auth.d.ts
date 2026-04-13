@@ -6,6 +6,8 @@ declare module "next-auth" {
     user: DefaultSession["user"] & {
       id: string;
       role: Role;
+      /** Set from DB each session; required to message owners after Mailgun-backed signup. */
+      hasVerifiedEmail: boolean;
       /** True when an admin is viewing the site as this owner account. */
       isImpersonating?: boolean;
     };
